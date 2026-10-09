@@ -3,18 +3,16 @@
 #include <algorithm>
 
 /**
- * @brief 快速数论变换 (NTT - Number Theoretic Transform)
- * @details 适用于在模 998244353 等具备原根的特殊质数模数下进行多项式乘法与卷积。
- *          复杂度:
- *          - 多项式乘法 mult: O((N + M) log(N + M))
- *          - 多项式快速幂 poly_pow: O(L log L log k)，L 为限制度数 lim
- *          纯局部状态，多测绝对安全。
+ * @brief 快速数论变换 (NTT)
+ * @details 模数固定 998244353，原根 G = 3
  */
 struct NTT 
 {
     static constexpr int MOD = 998244353;
     const int G = 3;
 
+    // 功能: 快速幂 a^b % MOD
+    // 传参: a 底数, b 指数
     long long ksm(long long a, long long b) const {
         long long res = 1;
         a %= MOD;
@@ -24,13 +22,17 @@ struct NTT
         return res;
     }
 
+    // 功能: 费马小定理求逆元
+    // 传参: a 待求逆元的整数
     long long inv(long long a) const {
         return ksm(a, MOD - 2);
     }
 
+    // 功能: NTT / INTT 核心变换 (系数 <-> 点值)
+    // 传参: a 系数数组 (长度需为 2^k), inv_flag 0: 正变换 / 1: 逆变换
     void transf(std::vector<int>& a, bool inv_flag) const {
         int n = a.size();
-        if (n <= 1) return; // 边界保护：避免 bit - 1 = -1 导致移位 UB
+        if (n <= 1) return;
 
         std::vector<int> rev(n, 0);
         int bit = __builtin_ctz(n);
@@ -65,6 +67,9 @@ struct NTT
         }
     }
 
+    // 功能: 多项式乘法 (卷积) C(x) = A(x) * B(x)
+    // 传参: a, b 多项式系数向量 (下标 i 为 x^i 项系数)
+    // 返回: 卷积后的系数向量 (size = deg(A) + deg(B) + 1)
     std::vector<int> mult(std::vector<int> a, std::vector<int> b) const {
         if (a.empty() || b.empty()) return {};
         int sz = a.size() + b.size() - 1;
@@ -85,6 +90,9 @@ struct NTT
         return a;
     }
 
+    // 功能: 多项式快速幂 A^k(x)
+    // 传参: a 底数多项式系数, k 幂次, lim 最高次数限制 (截断到 <= lim 项, 默认 -1 不截断)
+    // 返回: 结果多项式系数向量
     std::vector<int> poly_pow(std::vector<int> a, long long k, int lim = -1) const {
         std::vector<int> res = {1};
         while (k > 0) {
@@ -99,3 +107,15 @@ struct NTT
         return res;
     }
 };
+
+/*
+使用示范:
+    NTT ntt;
+
+    // 1. 多项式乘法: (1 + 2x) * (3 + 4x) = 3 + 10x + 8x^2
+    std::vector<int> a = {1, 2}, b = {3, 4};
+    std::vector<int> c = ntt.mult(a, b); // c 为 {3, 10, 8}
+
+    // 2. 多项式快速幂 (带截断): (1 + x)^3 截断到最高 2 次项
+    std::vector<int> p = ntt.poly_pow({1, 1}, 3, 2); // p 为 {1, 3, 3} (即 1 + 3x + 3x^2)
+*/
