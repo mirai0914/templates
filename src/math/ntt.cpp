@@ -106,6 +106,29 @@ struct NTT
         }
         return res;
     }
+
+    // 功能: 分治 NTT 求 n 个多项式连乘 F_1(x) * F_2(x) * ... * F_n(x)
+    // 传参: polys 待连乘的多项式向量集合, lim 最高次数限制 (默认 -1 不截断)
+    // 返回: 连乘结果多项式系数向量 (时间复杂度 O(N log^2 N), N = sum deg)
+    std::vector<int> poly_prod(const std::vector<std::vector<int>>& polys, int lim = -1) const {
+        if (polys.empty()) return {1};
+
+        auto dfs = [&](auto&& self, int l, int r) -> std::vector<int> {
+            if (l == r) {
+                auto res = polys[l];
+                if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
+                return res;
+            }
+            int mid = l + (r - l) / 2;
+            auto left = self(self, l, mid);
+            auto right = self(self, mid + 1, r);
+            auto res = mult(left, right);
+            if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
+            return res;
+        };
+
+        return dfs(dfs, 0, (int)polys.size() - 1);
+    }
 };
 
 /*
@@ -118,4 +141,8 @@ struct NTT
 
     // 2. 多项式快速幂 (带截断): (1 + x)^3 截断到最高 2 次项
     std::vector<int> p = ntt.poly_pow({1, 1}, 3, 2); // p 为 {1, 3, 3} (即 1 + 3x + 3x^2)
+
+    // 3. n 个多项式连乘 (分治 NTT): (1 + x) * (1 + 2x) * (1 + 3x) = 1 + 6x + 11x^2 + 6x^3
+    std::vector<std::vector<int>> polys = {{1, 1}, {1, 2}, {1, 3}};
+    std::vector<int> prod = ntt.poly_prod(polys); // prod 为 {1, 6, 11, 6}
 */
