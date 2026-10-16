@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
-#include <cmath>
+#include <bits/stdc++.h>
+using namespace std;
 
 /**
  * =========================================================================
@@ -15,7 +15,7 @@
 struct PartitionPentagonal {
     static constexpr int MOD = 998244353;
     int n = 0;
-    std::vector<int> p; // p[i] 为整数 i 的分拆数
+    vector<int> p; // p[i] 为整数 i 的分拆数
 
     PartitionPentagonal(int max_n = 0) {
         if (max_n >= 0) build(max_n);
@@ -29,7 +29,7 @@ struct PartitionPentagonal {
         p[0] = 1;
 
         // 预生成广义五边形数: k*(3k-1)/2 与 k*(3k+1)/2
-        std::vector<std::pair<int, int>> pent;
+        vector<pair<int, int>> pent;
         for (int k = 1;; ++k) {
             long long g1 = 1LL * k * (3LL * k - 1) / 2;
             long long g2 = 1LL * k * (3LL * k + 1) / 2;
@@ -86,10 +86,10 @@ struct PartitionSqrt {
         if (n < 0) return 0;
         if (n <= 1) return 1;
 
-        int B = std::sqrt(n);
+        int B = sqrt(n);
 
         // 1. 小数部分 (<= B) 完全背包
-        std::vector<int> f(n + 1, 0);
+        vector<int> f(n + 1, 0);
         f[0] = 1;
         for (int v = 1; v <= B; ++v) {
             for (int j = v; j <= n; ++j) {
@@ -99,9 +99,9 @@ struct PartitionSqrt {
         }
 
         // 2. 大数部分 (> B) 滚动 DP: 最多有 n / (B + 1) 个数
-        std::vector<int> prev(n + 1, 0), cur(n + 1, 0);
+        vector<int> prev(n + 1, 0), cur(n + 1, 0);
         prev[0] = 1;
-        std::vector<int> h(n + 1, 0);
+        vector<int> h(n + 1, 0);
         h[0] = 1; // c = 0
 
         int max_c = n / (B + 1);
@@ -115,7 +115,7 @@ struct PartitionSqrt {
                 h[j] += ways;
                 if (h[j] >= MOD) h[j] -= MOD;
             }
-            prev = std::move(cur);
+            prev = move(cur);
         }
 
         // 3. 点积合并

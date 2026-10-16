@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
-#include <algorithm>
+#include <bits/stdc++.h>
+using namespace std;
 
 /**
  * @brief 快速数论变换 (NTT)
@@ -30,16 +30,16 @@ struct NTT
 
     // 功能: NTT / INTT 核心变换 (系数 <-> 点值)
     // 传参: a 系数数组 (长度需为 2^k), inv_flag 0: 正变换 / 1: 逆变换
-    void transf(std::vector<int>& a, bool inv_flag) const {
+    void transf(vector<int>& a, bool inv_flag) const {
         int n = a.size();
         if (n <= 1) return;
 
-        std::vector<int> rev(n, 0);
+        vector<int> rev(n, 0);
         int bit = __builtin_ctz(n);
 
         for (int i = 0; i < n; ++i) {
             rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (bit - 1));
-            if (i < rev[i]) std::swap(a[i], a[rev[i]]);
+            if (i < rev[i]) swap(a[i], a[rev[i]]);
         }
 
         for (int len = 2; len <= n; len <<= 1) {
@@ -70,7 +70,7 @@ struct NTT
     // 功能: 多项式乘法 (卷积) C(x) = A(x) * B(x)
     // 传参: a, b 多项式系数向量 (下标 i 为 x^i 项系数)
     // 返回: 卷积后的系数向量 (size = deg(A) + deg(B) + 1)
-    std::vector<int> mult(std::vector<int> a, std::vector<int> b) const {
+    vector<int> mult(vector<int> a, vector<int> b) const {
         if (a.empty() || b.empty()) return {};
         int sz = a.size() + b.size() - 1;
         int n = 1;
@@ -93,8 +93,8 @@ struct NTT
     // 功能: 多项式快速幂 A^k(x)
     // 传参: a 底数多项式系数, k 幂次, lim 最高次数限制 (截断到 <= lim 项, 默认 -1 不截断)
     // 返回: 结果多项式系数向量
-    std::vector<int> poly_pow(std::vector<int> a, long long k, int lim = -1) const {
-        std::vector<int> res = {1};
+    vector<int> poly_pow(vector<int> a, long long k, int lim = -1) const {
+        vector<int> res = {1};
         while (k > 0) {
             if (k & 1) {
                 res = mult(res, a);
@@ -110,10 +110,10 @@ struct NTT
     // 功能: 分治 NTT 求 n 个多项式连乘 F_1(x) * F_2(x) * ... * F_n(x)
     // 传参: polys 待连乘的多项式向量集合, lim 最高次数限制 (默认 -1 不截断)
     // 返回: 连乘结果多项式系数向量 (时间复杂度 O(N log^2 N), N = sum deg)
-    std::vector<int> poly_prod(const std::vector<std::vector<int>>& polys, int lim = -1) const {
+    vector<int> poly_prod(const vector<vector<int>>& polys, int lim = -1) const {
         if (polys.empty()) return {1};
 
-        auto dfs = [&](auto&& self, int l, int r) -> std::vector<int> {
+        auto dfs = [&](auto&& self, int l, int r) -> vector<int> {
             if (l == r) {
                 auto res = polys[l];
                 if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
@@ -136,13 +136,13 @@ struct NTT
     NTT ntt;
 
     // 1. 多项式乘法: (1 + 2x) * (3 + 4x) = 3 + 10x + 8x^2
-    std::vector<int> a = {1, 2}, b = {3, 4};
-    std::vector<int> c = ntt.mult(a, b); // c 为 {3, 10, 8}
+    vector<int> a = {1, 2}, b = {3, 4};
+    vector<int> c = ntt.mult(a, b); // c 为 {3, 10, 8}
 
     // 2. 多项式快速幂 (带截断): (1 + x)^3 截断到最高 2 次项
-    std::vector<int> p = ntt.poly_pow({1, 1}, 3, 2); // p 为 {1, 3, 3} (即 1 + 3x + 3x^2)
+    vector<int> p = ntt.poly_pow({1, 1}, 3, 2); // p 为 {1, 3, 3} (即 1 + 3x + 3x^2)
 
     // 3. n 个多项式连乘 (分治 NTT): (1 + x) * (1 + 2x) * (1 + 3x) = 1 + 6x + 11x^2 + 6x^3
-    std::vector<std::vector<int>> polys = {{1, 1}, {1, 2}, {1, 3}};
-    std::vector<int> prod = ntt.poly_prod(polys); // prod 为 {1, 6, 11, 6}
+    vector<vector<int>> polys = {{1, 1}, {1, 2}, {1, 3}};
+    vector<int> prod = ntt.poly_prod(polys); // prod 为 {1, 6, 11, 6}
 */

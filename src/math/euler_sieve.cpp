@@ -1,5 +1,6 @@
 #pragma once
-#include <vector>
+#include <bits/stdc++.h>
+using namespace std;
 
 /**
  * =========================================================================
@@ -8,8 +9,8 @@
  */
 struct EulerSieve {
     int n = 0;
-    std::vector<int> prm;
-    std::vector<bool> isp; // isp[x] == false 表示 x 是质数 (与主人原版逻辑一致)
+    vector<int> prm;
+    vector<bool> isp; // isp[x] == false 表示 x 是质数 (与主人原版逻辑一致)
 
     EulerSieve(int max_n = 0) {
         if (max_n > 0) build(max_n);
@@ -59,10 +60,10 @@ struct EulerSieve {
  */
 struct MultiplicativeSieve {
     int n = 0;
-    std::vector<int> prm;
-    std::vector<bool> isp;
-    std::vector<int> phi;
-    std::vector<int> mu;
+    vector<int> prm;
+    vector<bool> isp;
+    vector<int> phi;
+    vector<int> mu;
 
     MultiplicativeSieve(int max_n = 0) {
         if (max_n > 0) build(max_n);
