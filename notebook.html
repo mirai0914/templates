@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>XCPC Team Notebook - mirai_39</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 10mm 12mm 10mm;
+            @bottom-right {
+                content: counter(page);
+                font-size: 8pt;
+                font-family: sans-serif;
+            }
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+            font-size: 9pt;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #24292f;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+        .header h1 {
+            margin: 0 0 4px 0;
+            font-size: 16pt;
+            letter-spacing: 0.5px;
+        }
+        .header .meta {
+            font-size: 8.5pt;
+            color: #57606a;
+        }
+        .notice-box {
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin-bottom: 12px;
+            font-size: 8pt;
+        }
+        .notice-box code {
+            background: #eaeef2;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: Consolas, monospace;
+            font-size: 8pt;
+            color: #cf222e;
+        }
+
+        /* 双栏排版 */
+        .column-container {
+            column-count: 2;
+            column-gap: 8mm;
+            column-rule: 1px solid #e1e4e8;
+        }
+
+        .section-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .section-header {
+            background: #f1f3f5;
+            padding: 4px 8px;
+            font-size: 9.5pt;
+            font-weight: bold;
+            border-bottom: 1px solid #d0d7de;
+            color: #0969da;
+        }
+        .section-body {
+            padding: 6px 8px;
+        }
+        .formula-box {
+            background: #fff8c5;
+            border-left: 3px solid #d4a72c;
+            padding: 4px 6px;
+            margin-bottom: 6px;
+            font-size: 7.8pt;
+            line-height: 1.35;
+        }
+        pre {
+            margin: 0;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 7.4pt;
+            line-height: 1.3;
+            background: #f6f8fa;
+            padding: 6px;
+            border-radius: 3px;
+            border: 1px solid #eaeef2;
+            white-space: pre-wrap;
+            word-break: break-all;
+            tab-size: 4;
+        }
+        .keyword { color: #cf222e; font-weight: bold; }
+        .type { color: #953800; font-weight: bold; }
+        .comment { color: #6e7781; font-style: italic; }
+        .string { color: #0a3069; }
+        .number { color: #0550ae; }
+
+        @media screen {
+            body {
+                background: #e9ecef;
+                padding: 20px;
+            }
+            .page-sheet {
+                background: white;
+                max-width: 210mm;
+                min-height: 297mm;
+                margin: 0 auto;
+                padding: 15mm;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-sheet">
+    <div class="header">
+        <h1>XCPC Team Notebook · 个人板子手册</h1>
+        <div class="meta">
+            维护者: <b>mirai_39 / mirai0914</b> &nbsp;|&nbsp; 目标: CCPC / ICPC 赛站冲银 &nbsp;|&nbsp; 纯血 vector · struct 自闭环封装
+        </div>
+    </div>
+
+    <div class="notice-box">
+        <b>赛场常备编译命令 (Windows 本地深搜防爆栈):</b><br>
+        <code>g++ -O2 -std=c++20 solve.cpp -Wl,--stack=268435456 -o solve.exe</code>
+        &nbsp;|&nbsp; 缺省快速输入: <code>cin.tie(nullptr)->sync_with_stdio(false);</code>
+    </div>
+
+    <div class="column-container">
+
+        <!-- 1. 欧拉线性筛 -->
+        <div class="section-card">
+            <div class="section-header">1. 欧拉线性筛 (素数 + 积性函数)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    <b>转移公式备忘:</b><br>
+                    • &phi;(p) = p-1; i%p==0 &rArr; &phi;(ip) = &phi;(i)*p; 否则 &phi;(i)*(p-1)<br>
+                    • &mu;(1)=1, &mu;(p)=-1; i%p==0 &rArr; &mu;(ip) = 0; 否则 -&mu;(i)
+                </div>
+<pre>struct EulerSieve {
+    int n = 0;
+    vector&lt;int&gt; prm;
+    vector&lt;bool&gt; isp; // isp[x]==false 为质数
+
+    EulerSieve(int max_n = 0) { if (max_n > 0) build(max_n); }
+    void build(int max_n) {
+        n = max_n; prm.clear(); isp.assign(n + 1, false);
+        if (n >= 0) isp[0] = true;
+        if (n >= 1) isp[1] = true;
+        for (int i = 2; i &lt;= n; i++) {
+            if (!isp[i]) prm.push_back(i);
+            for (int p : prm) {
+                if (1LL * i * p > n) break;
+                isp[i * p] = true;
+                if (i % p == 0) break;
+            }
+        }
+    }
+    bool is_prime(int x) const { return x >= 2 && x &lt;= n && !isp[x]; }
+};
+
+struct MultiplicativeSieve {
+    int n = 0;
+    vector&lt;int&gt; prm, phi, mu;
+    vector&lt;bool&gt; isp;
+
+    MultiplicativeSieve(int max_n = 0) { if (max_n > 0) build(max_n); }
+    void build(int max_n) {
+        n = max_n; prm.clear();
+        isp.assign(n + 1, false);
+        phi.assign(n + 1, 0); mu.assign(n + 1, 0);
+        if (n >= 0) isp[0] = true;
+        if (n >= 1) { isp[1] = true; phi[1] = 1; mu[1] = 1; }
+        for (int i = 2; i &lt;= n; i++) {
+            if (!isp[i]) {
+                prm.push_back(i);
+                phi[i] = i - 1; mu[i] = -1;
+            }
+            for (int p : prm) {
+                if (1LL * i * p > n) break;
+                isp[i * p] = true;
+                if (i % p == 0) {
+                    phi[i * p] = phi[i] * p;
+                    mu[i * p] = 0;
+                    break;
+                } else {
+                    phi[i * p] = phi[i] * (p - 1);
+                    mu[i * p] = -mu[i];
+                }
+            }
+        }
+    }
+};</pre>
+            </div>
+        </div>
+
+        <!-- 2. NTT 快速数论变换 -->
+        <div class="section-card">
+            <div class="section-header">2. 快速数论变换 (NTT 多项式乘法 / 快速幂 / 分治连乘)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    模数 MOD = 998244353, 原根 G = 3; mult: O((N+M)log(N+M)); poly_prod: O(N log^2 N)
+                </div>
+<pre>struct NTT {
+    static constexpr int MOD = 998244353;
+    const int G = 3;
+
+    long long ksm(long long a, long long b) const {
+        long long res = 1; a %= MOD;
+        for (; b; b >>= 1, a = a * a % MOD) if (b & 1) res = res * a % MOD;
+        return res;
+    }
+    long long inv(long long a) const { return ksm(a, MOD - 2); }
+
+    void transf(vector&lt;int&gt;& a, bool inv_flag) const {
+        int n = a.size(); if (n &lt;= 1) return;
+        vector&lt;int&gt; rev(n, 0);
+        int bit = __builtin_ctz(n);
+        for (int i = 0; i &lt; n; ++i) {
+            rev[i] = (rev[i >> 1] >> 1) | ((i & 1) &lt;&lt; (bit - 1));
+            if (i &lt; rev[i]) swap(a[i], a[rev[i]]);
+        }
+        for (int len = 2; len &lt;= n; len &lt;&lt;= 1) {
+            long long wlen = ksm(G, (MOD - 1) / len);
+            if (inv_flag) wlen = inv(wlen);
+            int half = len >> 1;
+            for (int i = 0; i &lt; n; i += len) {
+                long long w = 1;
+                for (int j = 0; j &lt; half; ++j) {
+                    int u = a[i + j];
+                    int v = 1LL * a[i + j + half] * w % MOD;
+                    a[i + j] = (u + v >= MOD ? u + v - MOD : u + v);
+                    a[i + j + half] = (u - v &lt; 0 ? u - v + MOD : u - v);
+                    w = w * wlen % MOD;
+                }
+            }
+        }
+        if (inv_flag) {
+            long long inv_n = inv(n);
+            for (int i = 0; i &lt; n; ++i) a[i] = 1LL * a[i] * inv_n % MOD;
+        }
+    }
+
+    vector&lt;int&gt; mult(vector&lt;int&gt; a, vector&lt;int&gt; b) const {
+        if (a.empty() || b.empty()) return {};
+        int sz = a.size() + b.size() - 1, n = 1;
+        while (n &lt; sz) n &lt;&lt;= 1;
+        a.resize(n, 0); b.resize(n, 0);
+        transf(a, 0); transf(b, 0);
+        for (int i = 0; i &lt; n; ++i) a[i] = 1LL * a[i] * b[i] % MOD;
+        transf(a, 1); a.resize(sz);
+        return a;
+    }
+
+    vector&lt;int&gt; poly_pow(vector&lt;int&gt; a, long long k, int lim = -1) const {
+        vector&lt;int&gt; res = {1};
+        while (k > 0) {
+            if (k & 1) {
+                res = mult(res, a);
+                if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
+            }
+            a = mult(a, a);
+            if (lim != -1 && (int)a.size() > lim + 1) a.resize(lim + 1);
+            k >>= 1;
+        }
+        return res;
+    }
+
+    // 分治 NTT 求 n 个多项式连乘
+    vector&lt;int&gt; poly_prod(const vector&lt;vector&lt;int&gt;&gt;& polys, int lim = -1) const {
+        if (polys.empty()) return {1};
+        auto dfs = [&](auto&& self, int l, int r) -> vector&lt;int&gt; {
+            if (l == r) {
+                auto res = polys[l];
+                if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
+                return res;
+            }
+            int mid = l + (r - l) / 2;
+            auto left = self(self, l, mid);
+            auto right = self(self, mid + 1, r);
+            auto res = mult(left, right);
+            if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
+            return res;
+        };
+        return dfs(dfs, 0, (int)polys.size() - 1);
+    }
+};</pre>
+            </div>
+        </div>
+
+        <!-- 3. 分拆数 -->
+        <div class="section-card">
+            <div class="section-header">3. 分拆数 (五边形数定理 + 根号分治 DP)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    • 广义五边形数: g_k = k(3k &plusmn; 1)/2, 符号序列: + + - - + + - -<br>
+                    • 根号分治: &le; B 完全背包; &gt; B 整体+1 与加新数 (B+1)
+                </div>
+<pre>struct PartitionPentagonal {
+    static constexpr int MOD = 998244353;
+    int n = 0;
+    vector&lt;int&gt; p;
+
+    PartitionPentagonal(int max_n = 0) { if (max_n >= 0) build(max_n); }
+    void build(int max_n) {
+        n = max_n; p.assign(n + 1, 0); p[0] = 1;
+        vector&lt;pair&lt;int, int&gt;&gt; pent;
+        for (int k = 1;; ++k) {
+            long long g1 = 1LL * k * (3LL * k - 1) / 2;
+            long long g2 = 1LL * k * (3LL * k + 1) / 2;
+            int sign = (k & 1) ? 1 : -1;
+            if (g1 &lt;= n) pent.emplace_back((int)g1, sign);
+            if (g2 &lt;= n) pent.emplace_back((int)g2, sign);
+            if (g1 > n && g2 > n) break;
+        }
+        for (int i = 1; i &lt;= n; ++i) {
+            long long val = 0;
+            for (const auto& [g, sign] : pent) {
+                if (g > i) break;
+                val += (sign == 1 ? p[i - g] : -p[i - g]);
+            }
+            val %= MOD; if (val &lt; 0) val += MOD;
+            p[i] = (int)val;
+        }
+    }
+    int query(int x) const { return (x &lt; 0 || x > n) ? 0 : p[x]; }
+};
+
+struct PartitionSqrt {
+    static constexpr int MOD = 998244353;
+    int calc(int n) const {
+        if (n &lt; 0) return 0;
+        if (n &lt;= 1) return 1;
+        int B = sqrt(n);
+        vector&lt;int&gt; f(n + 1, 0); f[0] = 1;
+        for (int v = 1; v &lt;= B; ++v)
+            for (int j = v; j &lt;= n; ++j) {
+                f[j] += f[j - v];
+                if (f[j] >= MOD) f[j] -= MOD;
+            }
+        vector&lt;int&gt; prev(n + 1, 0), cur(n + 1, 0), h(n + 1, 0);
+        prev[0] = h[0] = 1;
+        int max_c = n / (B + 1);
+        for (int c = 1; c &lt;= max_c; ++c) {
+            cur.assign(n + 1, 0);
+            for (int j = c * (B + 1); j &lt;= n; ++j) {
+                int ways = prev[j - (B + 1)] + cur[j - c];
+                if (ways >= MOD) ways -= MOD;
+                cur[j] = ways;
+                h[j] += ways;
+                if (h[j] >= MOD) h[j] -= MOD;
+            }
+            prev = move(cur);
+        }
+        long long ans = 0;
+        for (int k = 0; k &lt;= n; ++k)
+            ans = (ans + 1LL * f[k] * h[n - k]) % MOD;
+        return (int)ans;
+    }
+};</pre>
+            </div>
+        </div>
+
+        <!-- 4. 斯特林数 -->
+        <div class="section-card">
+            <div class="section-header">4. 斯特林数 (O(N^2) 递推 + NTT 单行求解)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    • 普通幂转下降幂: x^n = &sum; {n, k} x^{underline k}<br>
+                    • 上升幂转普通幂: x^{overline n} = &sum; [n, k] x^k = &prod;_{i=0}^{n-1} (x+i)<br>
+                    • 卷积容斥: {n, k} = &sum; (-1)^{k-j} / (k-j)! * (j^n / j!)
+                </div>
+<pre>struct StirlingTable {
+    static constexpr int MOD = 998244353;
+    int n = 0;
+    vector&lt;vector&lt;int&gt;&gt; s1, s2;
+
+    StirlingTable(int max_n = 0) { if (max_n >= 0) build(max_n); }
+    void build(int max_n) {
+        n = max_n;
+        s1.assign(n + 1, vector&lt;int&gt;(n + 1, 0));
+        s2.assign(n + 1, vector&lt;int&gt;(n + 1, 0));
+        s1[0][0] = s2[0][0] = 1;
+        for (int i = 1; i &lt;= n; ++i) {
+            for (int j = 1; j &lt;= i; ++j) {
+                s1[i][j] = (s1[i-1][j-1] + 1LL * (i-1) * s1[i-1][j]) % MOD;
+                s2[i][j] = (s2[i-1][j-1] + 1LL * j * s2[i-1][j]) % MOD;
+            }
+        }
+    }
+    int query_s1(int x, int y) const { return (x&lt;0||y&lt;0||y>x||x>n)?0:s1[x][y]; }
+    int query_s2(int x, int y) const { return (x&lt;0||y&lt;0||y>x||x>n)?0:s2[x][y]; }
+};
+
+struct StirlingRow {
+    static constexpr int MOD = 998244353;
+
+    // NTT 卷积求第二类斯特林数整行 O(N log N)
+    template &lt;typename NTTOp&gt;
+    vector&lt;int&gt; row_s2(int n, const NTTOp& ntt) const {
+        if (n == 0) return {1};
+        vector&lt;int&gt; fac(n + 1, 1), ifac(n + 1, 1);
+        for (int i = 1; i &lt;= n; ++i) fac[i] = 1LL * fac[i-1] * i % MOD;
+        ifac[n] = ntt.inv(fac[n]);
+        for (int i = n; i >= 1; --i) ifac[i-1] = 1LL * ifac[i] * i % MOD;
+
+        vector&lt;int&gt; a(n + 1), b(n + 1);
+        for (int i = 0; i &lt;= n; ++i) {
+            a[i] = (i & 1) ? (MOD - ifac[i]) % MOD : ifac[i];
+            b[i] = 1LL * ntt.ksm(i, n) * ifac[i] % MOD;
+        }
+        auto c = ntt.mult(a, b);
+        c.resize(n + 1);
+        return c;
+    }
+
+    // 分治 NTT 求第一类斯特林数整行 O(N log^2 N)
+    template &lt;typename NTTOp&gt;
+    vector&lt;int&gt; row_s1(int n, const NTTOp& ntt) const {
+        if (n == 0) return {1};
+        vector&lt;vector&lt;int&gt;&gt; polys(n);
+        for (int i = 0; i &lt; n; ++i) polys[i] = {i, 1}; // (x + i)
+        return ntt.poly_prod(polys);
+    }
+};</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
