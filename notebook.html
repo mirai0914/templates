@@ -450,19 +450,12 @@ struct StirlingRow {
                     <b>核心避坑准则:</b> 双端点 split 时，必须【先 split(r + 1)，再 split(l)】！<br>
                     结构 set&lt;array&lt;int, 3&gt;&gt;，适用含随机区间推平 assign 的序列操作。
                 </div>
-<pre>struct ODT {
+<pre>using ll = long long;
+
+struct ODT {
     set&lt;array&lt;int, 3&gt;&gt; s; // {l, r, v}
 
-    ODT() {}
-    ODT(int n, int dft_v = 0) { build(n, dft_v); }
-    void clear() { s.clear(); }
-    void build(int n, int dft_v = 0) {
-        s.clear(); s.insert({1, n, dft_v});
-    }
-    void build(const vector&lt;int&gt;& a) {
-        s.clear(); int n = a.size() - 1;
-        for (int i = 1; i &lt;= n; ++i) s.insert({i, i, a[i]});
-    }
+    ODT(int n, ll v) { s.insert({1, n, (int)v}); }
 
     auto split(int x) {
         auto it = prev(s.lower_bound({x + 1, 0, 0}));
@@ -473,22 +466,22 @@ struct StirlingRow {
         return s.insert({x, r, v}).first;
     }
 
-    void assign(int l, int r, int v) {
+    void assign(int l, int r, ll v) {
         auto itr = split(r + 1), itl = split(l);
         s.erase(itl, itr);
-        s.insert({l, r, v});
+        s.insert({l, r, (int)v});
     }
 
-    void add(int l, int r, int v) {
+    void add(int l, int r, ll v) {
         auto itr = split(r + 1), itl = split(l);
         vector&lt;array&lt;int, 3&gt;&gt; tmp;
         for (auto it = itl; it != itr; ++it)
-            tmp.push_back({(*it)[0], (*it)[1], (*it)[2] + v});
+            tmp.push_back({(*it)[0], (*it)[1], (int)((*it)[2] + v)});
         s.erase(itl, itr);
         for (auto& node : tmp) s.insert(node);
     }
 
-    int kth(int l, int r, int k) {
+    ll kth(int l, int r, int k) {
         auto itr = split(r + 1), itl = split(l);
         vector&lt;pair&lt;int, int&gt;&gt; a;
         for (auto it = itl; it != itr; ++it)
@@ -501,22 +494,22 @@ struct StirlingRow {
         return -1;
     }
 
-    int sum_pow(int l, int r, int p, int mod) {
+    ll sum_pow(int l, int r, int p, ll mod) {
         auto itr = split(r + 1), itl = split(l);
-        auto ksm = [&amp;](long long base, int exp) -> long long {
-            long long res = 1 % mod; base %= mod;
+        auto ksm = [&amp;](ll base, int exp) -> ll {
+            ll res = 1 % mod; base %= mod;
             while (exp > 0) {
                 if (exp &amp; 1) res = (__int128_t)res * base % mod;
                 base = (__int128_t)base * base % mod; exp >>= 1;
             }
             return res;
         };
-        long long ans = 0;
+        ll ans = 0;
         for (auto it = itl; it != itr; ++it) {
-            long long len = (*it)[1] - (*it)[0] + 1;
+            ll len = (*it)[1] - (*it)[0] + 1;
             ans = (ans + len * ksm((*it)[2], p)) % mod;
         }
-        return (int)ans;
+        return ans;
     }
 };</pre>
             </div>

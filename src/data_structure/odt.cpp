@@ -2,6 +2,8 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+using ll = long long;
+
 /**
  * =========================================================================
  * 珂朵莉树 (ODT - Old Driver Tree / Chtholly Tree)
@@ -15,31 +17,8 @@ using namespace std;
 struct ODT {
     set<array<int, 3>> s;
 
-    ODT() {}
-    ODT(int n, int dft_v = 0) {
-        build(n, dft_v);
-    }
-
-    // 功能: 清空重置，多测安全
-    void clear() {
-        s.clear();
-    }
-
-    // 功能: 初始化区间 [1, n] 初始单值 dft_v
-    // 传参: n 区间长度 (1-indexed), dft_v 默认权值
-    void build(int n, int dft_v = 0) {
-        s.clear();
-        s.insert({1, n, dft_v});
-    }
-
-    // 功能: 用 vector 构造 ODT (1-indexed, 使用下标 1 ~ a.size()-1)
-    // 传参: a 初始权值向量
-    void build(const vector<int>& a) {
-        s.clear();
-        int n = a.size() - 1;
-        for (int i = 1; i <= n; ++i) {
-            s.insert({i, i, a[i]});
-        }
+    ODT(int n, ll v) {
+        s.insert({1, n, (int)v});
     }
 
     // 功能: 切分包含位置 x 的区间为 [l, x-1] 和 [x, r]
@@ -56,21 +35,21 @@ struct ODT {
 
     // 功能: 区间推平赋值 [l, r] = v (ODT 维持复杂度的核心)
     // 传参: l, r 区间左右界, v 新赋权值
-    void assign(int l, int r, int v) {
+    void assign(int l, int r, ll v) {
         auto itr = split(r + 1);
         auto itl = split(l);
         s.erase(itl, itr);
-        s.insert({l, r, v});
+        s.insert({l, r, (int)v});
     }
 
     // 功能: 区间加 [l, r] += v
     // 传参: l, r 区间左右界, v 增加的权值
-    void add(int l, int r, int v) {
+    void add(int l, int r, ll v) {
         auto itr = split(r + 1);
         auto itl = split(l);
         vector<array<int, 3>> tmp;
         for (auto it = itl; it != itr; ++it) {
-            tmp.push_back({(*it)[0], (*it)[1], (*it)[2] + v});
+            tmp.push_back({(*it)[0], (*it)[1], (int)((*it)[2] + v)});
         }
         s.erase(itl, itr);
         for (auto& node : tmp) {
@@ -81,7 +60,7 @@ struct ODT {
     // 功能: 查询区间 [l, r] 第 k 小值 (1-indexed)
     // 传参: l, r 区间, k 名次 (1 <= k <= r - l + 1)
     // 返回: 第 k 小的值
-    int kth(int l, int r, int k) {
+    ll kth(int l, int r, int k) {
         auto itr = split(r + 1);
         auto itl = split(l);
         vector<pair<int, int>> a;
@@ -99,11 +78,11 @@ struct ODT {
     // 功能: 查询区间 [l, r] 元素 p 次方和 sum_{i=l}^r (a[i]^p) % mod
     // 传参: l, r 区间, p 幂次, mod 模数
     // 返回: 区间 p 次方和取模结果
-    int sum_pow(int l, int r, int p, int mod) {
+    ll sum_pow(int l, int r, int p, ll mod) {
         auto itr = split(r + 1);
         auto itl = split(l);
-        auto ksm = [&](long long base, int exp) -> long long {
-            long long res = 1 % mod;
+        auto ksm = [&](ll base, int exp) -> ll {
+            ll res = 1 % mod;
             base %= mod;
             while (exp > 0) {
                 if (exp & 1) res = (__int128_t)res * base % mod;
@@ -112,20 +91,19 @@ struct ODT {
             }
             return res;
         };
-        long long ans = 0;
+        ll ans = 0;
         for (auto it = itl; it != itr; ++it) {
-            long long len = (*it)[1] - (*it)[0] + 1;
+            ll len = (*it)[1] - (*it)[0] + 1;
             ans = (ans + len * ksm((*it)[2], p)) % mod;
         }
-        return (int)ans;
+        return ans;
     }
 };
 
 /*
 使用示范:
-    ODT odt;
     // 1. 初始化区间 [1, 100000] 全为 0
-    odt.build(100000, 0);
+    ODT odt(100000, 0);
 
     // 2. 区间加: [1, 10] += 5
     odt.add(1, 10, 5);
@@ -134,8 +112,8 @@ struct ODT {
     odt.assign(3, 8, 7);
 
     // 4. 查询第 k 小: [1, 10] 第 4 小
-    int val = odt.kth(1, 10, 4);
+    ll val = odt.kth(1, 10, 4);
 
     // 5. 查询区间平方和对 1e9+7 取模
-    int sum2 = odt.sum_pow(1, 10, 2, 1000000007);
+    ll sum2 = odt.sum_pow(1, 10, 2, 1000000007LL);
 */

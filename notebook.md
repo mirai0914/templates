@@ -359,19 +359,12 @@ struct StirlingRow {
 #include <bits/stdc++.h>
 using namespace std;
 
+using ll = long long;
+
 struct ODT {
     set<array<int, 3>> s; // {l, r, v}
 
-    ODT() {}
-    ODT(int n, int dft_v = 0) { build(n, dft_v); }
-    void clear() { s.clear(); }
-    void build(int n, int dft_v = 0) {
-        s.clear(); s.insert({1, n, dft_v});
-    }
-    void build(const vector<int>& a) {
-        s.clear(); int n = a.size() - 1;
-        for (int i = 1; i <= n; ++i) s.insert({i, i, a[i]});
-    }
+    ODT(int n, ll v) { s.insert({1, n, (int)v}); }
 
     // 切分包含 x 的区间为 [l, x-1] 与 [x, r]
     auto split(int x) {
@@ -384,24 +377,24 @@ struct ODT {
     }
 
     // 区间推平赋值 [l, r] = v (必须先 r+1 再 l)
-    void assign(int l, int r, int v) {
+    void assign(int l, int r, ll v) {
         auto itr = split(r + 1), itl = split(l);
         s.erase(itl, itr);
-        s.insert({l, r, v});
+        s.insert({l, r, (int)v});
     }
 
     // 区间加 [l, r] += v
-    void add(int l, int r, int v) {
+    void add(int l, int r, ll v) {
         auto itr = split(r + 1), itl = split(l);
         vector<array<int, 3>> tmp;
         for (auto it = itl; it != itr; ++it)
-            tmp.push_back({(*it)[0], (*it)[1], (*it)[2] + v});
+            tmp.push_back({(*it)[0], (*it)[1], (int)((*it)[2] + v)});
         s.erase(itl, itr);
         for (auto& node : tmp) s.insert(node);
     }
 
     // 区间第 k 小 (1-indexed)
-    int kth(int l, int r, int k) {
+    ll kth(int l, int r, int k) {
         auto itr = split(r + 1), itl = split(l);
         vector<pair<int, int>> a;
         for (auto it = itl; it != itr; ++it)
@@ -415,22 +408,22 @@ struct ODT {
     }
 
     // 区间 p 次方和 sum_{i=l}^r (a[i]^p) % mod
-    int sum_pow(int l, int r, int p, int mod) {
+    ll sum_pow(int l, int r, int p, ll mod) {
         auto itr = split(r + 1), itl = split(l);
-        auto ksm = [&](long long base, int exp) -> long long {
-            long long res = 1 % mod; base %= mod;
+        auto ksm = [&](ll base, int exp) -> ll {
+            ll res = 1 % mod; base %= mod;
             while (exp > 0) {
                 if (exp & 1) res = (__int128_t)res * base % mod;
                 base = (__int128_t)base * base % mod; exp >>= 1;
             }
             return res;
         };
-        long long ans = 0;
+        ll ans = 0;
         for (auto it = itl; it != itr; ++it) {
-            long long len = (*it)[1] - (*it)[0] + 1;
+            ll len = (*it)[1] - (*it)[0] + 1;
             ans = (ans + len * ksm((*it)[2], p)) % mod;
         }
-        return (int)ans;
+        return ans;
     }
 };
 ```
