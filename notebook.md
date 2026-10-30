@@ -431,12 +431,13 @@ struct ODT {
 
 ---
 
-## 6. 主席树 (可持久化权值线段树 / 静态区间第 k 小)
+## 6. 主席树 (可持久化权值线段树 / 静态区间第 k 小 / 树上第 k 小)
 
 > **特性与复杂度**:  
+> - 基础核心: 前缀版本差分，在 $roots[r]$ 与 $roots[l - 1]$ 之间做差二分  
 > - 空间复杂度: $\mathcal{O}(N \log M)$ 纯血 `vector` 动态开点（0 号空节点）  
 > - 时间复杂度: 单次单点插入 $\mathcal{O}(\log M)$，单次区间查询 $\mathcal{O}(\log M)$，整树构建 $\mathcal{O}(N \log N)$  
-> - 查询核心: 前缀版本差分，在 $roots[r]$ 与 $roots[l - 1]$ 之间做差二分
+> - 可选扩展: 区间值域计数 `count_le` / `count_range`；树上路径第 k 小 `query_path_kth` (四树差分)
 
 ```cpp
 #include <bits/stdc++.h>
@@ -497,15 +498,37 @@ struct PersistentSegTree {
         m = vals.size();
 
         for (int i = 1; i <= n; ++i) {
-            int pos = lower_bound(vals.begin(), vals.end(), a[i]) - vals.begin() + 1;
-            roots[i] = insert(roots[i - 1], 1, m, pos);
+            roots[i] = insert(roots[i - 1], get_pos(a[i]));
         }
     }
 
-    // 查询区间 [l, r] 第 k 小原值
-    int query_kth(int l, int r, int k) const {
-        int pos = query(roots[r], roots[l - 1], 1, m, k);
-        return vals[pos - 1];
+    // --- 一行小封装入口 ---
+    int insert(int p, int pos) { return insert(p, 1, m, pos); }
+    int get_pos(int x) const { return lower_bound(vals.begin(), vals.end(), x) - vals.begin() + 1; }
+    int query_kth(int l, int r, int k) const { return vals[query(roots[r], roots[l - 1], 1, m, k) - 1]; }
+
+    // --- 可选扩展 1: 区间值域计数 (<= x 或 [x, y]) ---
+    int query_count(int u, int v, int l, int r, int ql, int qr) const {
+        if (ql > r || qr < l || ql > qr) return 0;
+        if (ql <= l && r <= qr) return tr[u].cnt - tr[v].cnt;
+        int mid = l + (r - l) / 2;
+        return query_count(tr[u].lc, tr[v].lc, l, mid, ql, qr) + query_count(tr[u].rc, tr[v].rc, mid + 1, r, ql, qr);
+    }
+    int count_le(int l, int r, int x) const {
+        return query_count(roots[r], roots[l - 1], 1, m, 1, upper_bound(vals.begin(), vals.end(), x) - vals.begin());
+    }
+    int count_range(int l, int r, int x, int y) const { return count_le(l, r, y) - count_le(l, r, x - 1); }
+
+    // --- 可选扩展 2: 树上路径第 k 小 (四树差分) ---
+    int query_tree(int u, int v, int lca, int fa_lca, int l, int r, int k) const {
+        if (l == r) return l;
+        int left = tr[tr[u].lc].cnt + tr[tr[v].lc].cnt - tr[tr[lca].lc].cnt - tr[tr[fa_lca].lc].cnt;
+        int mid = l + (r - l) / 2;
+        if (k <= left) return query_tree(tr[u].lc, tr[v].lc, tr[lca].lc, tr[fa_lca].lc, l, mid, k);
+        else return query_tree(tr[u].rc, tr[v].rc, tr[lca].rc, tr[fa_lca].rc, mid + 1, r, k - left);
+    }
+    int query_path_kth(int u, int v, int lca, int fa_lca, int k) const {
+        return vals[query_tree(roots[u], roots[v], roots[lca], roots[fa_lca], 1, m, k) - 1];
     }
 };
 ```

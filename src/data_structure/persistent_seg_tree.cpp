@@ -73,17 +73,48 @@ struct PersistentSegTree {
         m = vals.size();
 
         for (int i = 1; i <= n; ++i) {
-            int pos = lower_bound(vals.begin(), vals.end(), a[i]) - vals.begin() + 1;
-            roots[i] = insert(roots[i - 1], 1, m, pos);
+            roots[i] = insert(roots[i - 1], get_pos(a[i]));
         }
     }
 
-    // 功能: 查询区间 [l, r] 第 k 小的原始数值
-    // 传参: l, r 目标区间 (1-indexed), k 名次 (1 <= k <= r - l + 1)
-    // 返回: 第 k 小对应的原数组数值
-    int query_kth(int l, int r, int k) const {
-        int pos = query(roots[r], roots[l - 1], 1, m, k);
-        return vals[pos - 1];
+    // --- 一行小封装入口 ---
+    int insert(int p, int pos) { return insert(p, 1, m, pos); }
+    int get_pos(int x) const { return lower_bound(vals.begin(), vals.end(), x) - vals.begin() + 1; }
+    int query_kth(int l, int r, int k) const { return vals[query(roots[r], roots[l - 1], 1, m, k) - 1]; }
+
+    // =========================================================================
+    // 可选扩展 1: 区间值域计数 / 二维数点 (Count / Rank)
+    // =========================================================================
+    // 功能: 查询区间 [l, r] 内值域在 [ql, qr] 范围的元素个数
+    int query_count(int u, int v, int l, int r, int ql, int qr) const {
+        if (ql > r || qr < l || ql > qr) return 0;
+        if (ql <= l && r <= qr) return tr[u].cnt - tr[v].cnt;
+        int mid = l + (r - l) / 2;
+        return query_count(tr[u].lc, tr[v].lc, l, mid, ql, qr) +
+               query_count(tr[u].rc, tr[v].rc, mid + 1, r, ql, qr);
+    }
+    // 一行小封装: 区间 <= x 的元素个数
+    int count_le(int l, int r, int x) const {
+        int qr = upper_bound(vals.begin(), vals.end(), x) - vals.begin();
+        return query_count(roots[r], roots[l - 1], 1, m, 1, qr);
+    }
+    // 一行小封装: 区间值在 [x, y] 范围内的元素个数
+    int count_range(int l, int r, int x, int y) const { return count_le(l, r, y) - count_le(l, r, x - 1); }
+
+    // =========================================================================
+    // 可选扩展 2: 树上路径第 k 小 (Tree Path Kth)
+    // =========================================================================
+    // 功能: 树上前缀差分 (u + v - lca - fa_lca) 二分第 k 小
+    int query_tree(int u, int v, int lca, int fa_lca, int l, int r, int k) const {
+        if (l == r) return l;
+        int left_cnt = tr[tr[u].lc].cnt + tr[tr[v].lc].cnt - tr[tr[lca].lc].cnt - tr[tr[fa_lca].lc].cnt;
+        int mid = l + (r - l) / 2;
+        if (k <= left_cnt) return query_tree(tr[u].lc, tr[v].lc, tr[lca].lc, tr[fa_lca].lc, l, mid, k);
+        else return query_tree(tr[u].rc, tr[v].rc, tr[lca].rc, tr[fa_lca].rc, mid + 1, r, k - left_cnt);
+    }
+    // 一行小封装: 树上路径第 k 小原值 (建树时 roots[u] = insert(roots[fa], get_pos(val[u])))
+    int query_path_kth(int u, int v, int lca, int fa_lca, int k) const {
+        return vals[query_tree(roots[u], roots[v], roots[lca], roots[fa_lca], 1, m, k) - 1];
     }
 };
 
@@ -95,6 +126,12 @@ struct PersistentSegTree {
     // 1. 初始化并构建前缀主席树
     PersistentSegTree pst(a);
 
-    // 2. 查询区间 [2, 6] 第 3 小的值
+    // 2. 一行小封装: 查询区间 [2, 6] 第 3 小的值
     int val = pst.query_kth(2, 6, 3);
+
+    // 3. 可选扩展 1: 查询区间 [2, 6] 内 <= 4 的元素个数
+    int cnt = pst.count_le(2, 6, 4);
+
+    // 4. 可选扩展 2: 树上路径第 k 小 (需配合树剖/倍增求 LCA)
+    // int ans = pst.query_path_kth(u, v, lca, fa[lca], k);
 */
