@@ -64,6 +64,7 @@ struct PersistentSegTree {
         n = a.size() - 1;
         roots.assign(n + 1, 0);
         tr.clear();
+        tr.reserve(n * 20 + 5);
         tr.emplace_back(); // 0 号空节点 (lc=0, rc=0, cnt=0)
 
         // 离散化
