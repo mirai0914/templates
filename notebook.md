@@ -26,6 +26,7 @@ cin.tie(nullptr)->sync_with_stdio(false);
 - [3. 分拆数 (五边形数定理 + 根号分治 DP)](#3-分拆数-五边形数定理--根号分治-dp)
 - [4. 斯特林数 (O(N^2) 递推 + NTT 单行求解)](#4-斯特林数-on2-递推--ntt-单行求解)
 - [5. 珂朵莉树 (ODT - Old Driver Tree / Chtholly Tree)](#5-珂朵莉树-odt---old-driver-tree--chtholly-tree)
+- [6. 主席树 (可持久化权值线段树 / 静态区间第 k 小)](#6-主席树-可持久化权值线段树--静态区间第-k-小)
 
 ---
 
@@ -424,6 +425,87 @@ struct ODT {
             ans = (ans + len * ksm((*it)[2], p)) % mod;
         }
         return ans;
+    }
+};
+```
+
+---
+
+## 6. 主席树 (可持久化权值线段树 / 静态区间第 k 小)
+
+> **特性与复杂度**:  
+> - 空间复杂度: $\mathcal{O}(N \log M)$ 纯血 `vector` 动态开点（0 号空节点）  
+> - 时间复杂度: 单次单点插入 $\mathcal{O}(\log M)$，单次区间查询 $\mathcal{O}(\log M)$，整树构建 $\mathcal{O}(N \log N)$  
+> - 查询核心: 前缀版本差分，在 $roots[r]$ 与 $roots[l - 1]$ 之间做差二分
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+struct PersistentSegTree {
+    struct Node {
+        int lc = 0, rc = 0, cnt = 0;
+    };
+
+    int n = 0, m = 0;
+    vector<int> roots;
+    vector<Node> tr;
+    vector<int> vals;
+
+    PersistentSegTree() {}
+    PersistentSegTree(const vector<int>& a) {
+        build(a);
+    }
+
+    // 动态开点单点插入
+    int insert(int p, int l, int r, int pos) {
+        int u = tr.size();
+        tr.push_back(tr[p]);
+        tr[u].cnt++;
+        if (l == r) return u;
+        int mid = l + (r - l) / 2;
+        if (pos <= mid) {
+            tr[u].lc = insert(tr[p].lc, l, mid, pos);
+        } else {
+            tr[u].rc = insert(tr[p].rc, mid + 1, r, pos);
+        }
+        return u;
+    }
+
+    // 两版本差分二分第 k 小下标
+    int query(int u, int v, int l, int r, int k) const {
+        if (l == r) return l;
+        int left_cnt = tr[tr[u].lc].cnt - tr[tr[v].lc].cnt;
+        int mid = l + (r - l) / 2;
+        if (k <= left_cnt) {
+            return query(tr[u].lc, tr[v].lc, l, mid, k);
+        } else {
+            return query(tr[u].rc, tr[v].rc, mid + 1, r, k - left_cnt);
+        }
+    }
+
+    // 一键构建前缀主席树 (下标 1 ~ a.size()-1)
+    void build(const vector<int>& a) {
+        n = a.size() - 1;
+        roots.assign(n + 1, 0);
+        tr.clear();
+        tr.emplace_back(); // 0 号空节点
+
+        vals.assign(a.begin() + 1, a.end());
+        sort(vals.begin(), vals.end());
+        vals.erase(unique(vals.begin(), vals.end()), vals.end());
+        m = vals.size();
+
+        for (int i = 1; i <= n; ++i) {
+            int pos = lower_bound(vals.begin(), vals.end(), a[i]) - vals.begin() + 1;
+            roots[i] = insert(roots[i - 1], 1, m, pos);
+        }
+    }
+
+    // 查询区间 [l, r] 第 k 小原值
+    int query_kth(int l, int r, int k) const {
+        int pos = query(roots[r], roots[l - 1], 1, m, k);
+        return vals[pos - 1];
     }
 };
 ```

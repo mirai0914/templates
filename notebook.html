@@ -515,6 +515,65 @@ struct ODT {
             </div>
         </div>
 
+        <!-- 6. 主席树 (可持久化权值线段树) -->
+        <div class="section-card">
+            <div class="section-header">6. 主席树 (可持久化权值线段树 / 静态区间第 k 小)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    前缀版本差分查询: 在 roots[r] 与 roots[l-1] 间做差二分。<br>
+                    单次单点插/查 O(log M), 整树构建 O(N log N), 空间 O(N log M) 动态开点。
+                </div>
+<pre>struct PersistentSegTree {
+    struct Node { int lc = 0, rc = 0, cnt = 0; };
+    int n = 0, m = 0;
+    vector&lt;int&gt; roots;
+    vector&lt;Node&gt; tr;
+    vector&lt;int&gt; vals;
+
+    PersistentSegTree() {}
+    PersistentSegTree(const vector&lt;int&gt;& a) { build(a); }
+
+    int insert(int p, int l, int r, int pos) {
+        int u = tr.size();
+        tr.push_back(tr[p]);
+        tr[u].cnt++;
+        if (l == r) return u;
+        int mid = l + (r - l) / 2;
+        if (pos &lt;= mid) tr[u].lc = insert(tr[p].lc, l, mid, pos);
+        else tr[u].rc = insert(tr[p].rc, mid + 1, r, pos);
+        return u;
+    }
+
+    int query(int u, int v, int l, int r, int k) const {
+        if (l == r) return l;
+        int left_cnt = tr[tr[u].lc].cnt - tr[tr[v].lc].cnt;
+        int mid = l + (r - l) / 2;
+        if (k &lt;= left_cnt) return query(tr[u].lc, tr[v].lc, l, mid, k);
+        else return query(tr[u].rc, tr[v].rc, mid + 1, r, k - left_cnt);
+    }
+
+    void build(const vector&lt;int&gt;& a) {
+        n = a.size() - 1;
+        roots.assign(n + 1, 0);
+        tr.clear(); tr.emplace_back(); // 0 号空节点
+        vals.assign(a.begin() + 1, a.end());
+        sort(vals.begin(), vals.end());
+        vals.erase(unique(vals.begin(), vals.end()), vals.end());
+        m = vals.size();
+        for (int i = 1; i &lt;= n; ++i) {
+            int pos = lower_bound(vals.begin(), vals.end(), a[i]) - vals.begin() + 1;
+            roots[i] = insert(roots[i - 1], 1, m, pos);
+        }
+    }
+
+    int query_kth(int l, int r, int k) const {
+        int pos = query(roots[r], roots[l - 1], 1, m, k);
+        return vals[pos - 1];
+    }
+};</pre>
+            </div>
+        </div>
+
     </div>
 </div>
 
