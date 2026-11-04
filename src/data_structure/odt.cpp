@@ -63,9 +63,9 @@ struct ODT {
     ll kth(int l, int r, int k) {
         auto itr = split(r + 1);
         auto itl = split(l);
-        vector<pair<int, int>> a;
+        vector<array<int, 2>> a;
         for (auto it = itl; it != itr; ++it) {
-            a.emplace_back((*it)[2], (*it)[1] - (*it)[0] + 1);
+            a.push_back({(*it)[2], (*it)[1] - (*it)[0] + 1});
         }
         sort(a.begin(), a.end());
         for (const auto& [val, len] : a) {

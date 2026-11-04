@@ -221,13 +221,13 @@ struct PartitionPentagonal {
     PartitionPentagonal(int max_n = 0) { if (max_n >= 0) build(max_n); }
     void build(int max_n) {
         n = max_n; p.assign(n + 1, 0); p[0] = 1;
-        vector<pair<int, int>> pent;
+        vector<array<int, 2>> pent;
         for (int k = 1;; ++k) {
             long long g1 = 1LL * k * (3LL * k - 1) / 2;
             long long g2 = 1LL * k * (3LL * k + 1) / 2;
             int sign = (k & 1) ? 1 : -1;
-            if (g1 <= n) pent.emplace_back((int)g1, sign);
-            if (g2 <= n) pent.emplace_back((int)g2, sign);
+            if (g1 <= n) pent.push_back({(int)g1, sign});
+            if (g2 <= n) pent.push_back({(int)g2, sign});
             if (g1 > n && g2 > n) break;
         }
         for (int i = 1; i <= n; ++i) {
@@ -398,9 +398,9 @@ struct ODT {
     // 区间第 k 小 (1-indexed)
     ll kth(int l, int r, int k) {
         auto itr = split(r + 1), itl = split(l);
-        vector<pair<int, int>> a;
+        vector<array<int, 2>> a;
         for (auto it = itl; it != itr; ++it)
-            a.emplace_back((*it)[2], (*it)[1] - (*it)[0] + 1);
+            a.push_back({(*it)[2], (*it)[1] - (*it)[0] + 1});
         sort(a.begin(), a.end());
         for (const auto& [val, len] : a) {
             k -= len;
@@ -560,7 +560,7 @@ struct EXCRT {
     EXCRT() {}
 
     // 扩展欧几里得求 a*x + b*y = gcd(a, b)
-    static ll exgcd(ll a, ll b, ll& x, ll& y) {
+    ll exgcd(ll a, ll b, ll& x, ll& y) {
         if (!b) {
             x = 1; y = 0;
             return a;
@@ -596,12 +596,12 @@ struct EXCRT {
 
     // 一行小封装: 一次性求解方程组 x = r[i] (mod m[i])
     // 返回: {最小非负解 x, lcm 模数 M} (无解返回 {-1, -1})
-    static pair<ll, ll> solve(const vector<ll>& r, const vector<ll>& m) {
-        EXCRT s;
+    array<ll, 2> solve(const vector<ll>& r, const vector<ll>& m) {
+        ans = 0; M = 1; ok = true;
         for (int i = 0; i < (int)r.size(); ++i) {
-            if (!s.add(r[i], m[i])) return {-1, -1};
+            if (!add(r[i], m[i])) return {-1, -1};
         }
-        return {s.ans, s.M};
+        return {ans, M};
     }
 };
 ```

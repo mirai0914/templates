@@ -29,13 +29,13 @@ struct PartitionPentagonal {
         p[0] = 1;
 
         // 预生成广义五边形数: k*(3k-1)/2 与 k*(3k+1)/2
-        vector<pair<int, int>> pent;
+        vector<array<int, 2>> pent;
         for (int k = 1;; ++k) {
             long long g1 = 1LL * k * (3LL * k - 1) / 2;
             long long g2 = 1LL * k * (3LL * k + 1) / 2;
             int sign = (k & 1) ? 1 : -1;
-            if (g1 <= n) pent.emplace_back((int)g1, sign);
-            if (g2 <= n) pent.emplace_back((int)g2, sign);
+            if (g1 <= n) pent.push_back({(int)g1, sign});
+            if (g2 <= n) pent.push_back({(int)g2, sign});
             if (g1 > n && g2 > n) break;
         }
 

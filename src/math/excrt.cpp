@@ -26,8 +26,8 @@ struct EXCRT {
 
     EXCRT() {}
 
-    // 功能: 扩展欧几里得求 a*x + b*y = gcd(a, b)
-    static ll exgcd(ll a, ll b, ll& x, ll& y) {
+    // 扩展欧几里得求 a*x + b*y = gcd(a, b)
+    ll exgcd(ll a, ll b, ll& x, ll& y) {
         if (!b) {
             x = 1; y = 0;
             return a;
@@ -63,27 +63,29 @@ struct EXCRT {
         return true;
     }
 
-    // --- 一行小封装: 一次性求解方程组 x = r[i] (mod m[i]) ---
+    // 功能: 一次性求解方程组 x = r[i] (mod m[i])
+    // 传参: r 余数向量, m 模数向量
     // 返回: {最小非负解 x, lcm 模数 M} (无解返回 {-1, -1})
-    static pair<ll, ll> solve(const vector<ll>& r, const vector<ll>& m) {
-        EXCRT s;
+    array<ll, 2> solve(const vector<ll>& r, const vector<ll>& m) {
+        ans = 0; M = 1; ok = true;
         for (int i = 0; i < (int)r.size(); ++i) {
-            if (!s.add(r[i], m[i])) return {-1, -1};
+            if (!add(r[i], m[i])) return {-1, -1};
         }
-        return {s.ans, s.M};
+        return {ans, M};
     }
 };
 
 /*
 使用示范:
+    EXCRT excrt;
+
     // 1. 一次性求解方程组:
     // x = 2 (mod 3), x = 3 (mod 5), x = 2 (mod 7)
     vector<ll> r = {2, 3, 2}, m = {3, 5, 7};
-    auto [ans, M] = EXCRT::solve(r, m); // ans = 23, M = 105
+    auto [ans, M] = excrt.solve(r, m); // ans = 23, M = 105
 
-    // 2. 动态逐个加入方程:
-    EXCRT excrt;
-    excrt.add(2, 4); // x = 2 (mod 4)
-    excrt.add(4, 6); // x = 4 (mod 6) => ans = 10, M = 12
+    // 2. 动态逐个加入:
+    excrt.add(2, 4);
+    excrt.add(4, 6); // ans = 10, M = 12
     if (!excrt.ok) cout << "No Solution\n";
 */

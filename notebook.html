@@ -320,13 +320,13 @@ struct MultiplicativeSieve {
     PartitionPentagonal(int max_n = 0) { if (max_n >= 0) build(max_n); }
     void build(int max_n) {
         n = max_n; p.assign(n + 1, 0); p[0] = 1;
-        vector&lt;pair&lt;int, int&gt;&gt; pent;
+        vector&lt;array&lt;int, 2&gt;&gt; pent;
         for (int k = 1;; ++k) {
             long long g1 = 1LL * k * (3LL * k - 1) / 2;
             long long g2 = 1LL * k * (3LL * k + 1) / 2;
             int sign = (k & 1) ? 1 : -1;
-            if (g1 &lt;= n) pent.emplace_back((int)g1, sign);
-            if (g2 &lt;= n) pent.emplace_back((int)g2, sign);
+            if (g1 &lt;= n) pent.push_back({(int)g1, sign});
+            if (g2 &lt;= n) pent.push_back({(int)g2, sign});
             if (g1 > n && g2 > n) break;
         }
         for (int i = 1; i &lt;= n; ++i) {
@@ -483,9 +483,9 @@ struct ODT {
 
     ll kth(int l, int r, int k) {
         auto itr = split(r + 1), itl = split(l);
-        vector&lt;pair&lt;int, int&gt;&gt; a;
+        vector&lt;array&lt;int, 2&gt;&gt; a;
         for (auto it = itl; it != itr; ++it)
-            a.emplace_back((*it)[2], (*it)[1] - (*it)[0] + 1);
+            a.push_back({(*it)[2], (*it)[1] - (*it)[0] + 1});
         sort(a.begin(), a.end());
         for (const auto& [val, len] : a) {
             k -= len;
@@ -611,7 +611,7 @@ struct EXCRT {
 
     EXCRT() {}
 
-    static ll exgcd(ll a, ll b, ll&amp; x, ll&amp; y) {
+    ll exgcd(ll a, ll b, ll&amp; x, ll&amp; y) {
         if (!b) { x = 1; y = 0; return a; }
         ll g = exgcd(b, a % b, y, x);
         y -= a / b * x;
@@ -632,11 +632,11 @@ struct EXCRT {
         return true;
     }
 
-    static pair&lt;ll, ll&gt; solve(const vector&lt;ll&gt;&amp; r, const vector&lt;ll&gt;&amp; m) {
-        EXCRT s;
+    array&lt;ll, 2&gt; solve(const vector&lt;ll&gt;&amp; r, const vector&lt;ll&gt;&amp; m) {
+        ans = 0; M = 1; ok = true;
         for (int i = 0; i &lt; (int)r.size(); ++i)
-            if (!s.add(r[i], m[i])) return {-1, -1};
-        return {s.ans, s.M};
+            if (!add(r[i], m[i])) return {-1, -1};
+        return {ans, M};
     }
 };</pre>
             </div>
