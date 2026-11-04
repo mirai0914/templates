@@ -129,6 +129,12 @@ def create_notebook():
             "title": "主席树 (可持久化权值线段树 / 静态区间第 k 小 / 树上第 k 小)",
             "formula": "• 基础: roots[r] 与 roots[l-1] 差分二分 | 单次插/查 O(log M), 空间 O(N log M) 动态开点\n• 扩展: 区间 ≤ x 计数 count_le; 树上路径差分 u + v - lca - fa_lca",
             "file": os.path.join(repo_dir, "src/data_structure/persistent_seg_tree.cpp")
+        },
+        {
+            "id": "7",
+            "title": "扩展中国剩余定理 (EXCRT - 不互质模数同余方程组求解)",
+            "formula": "• 联立方程: ans + t*M = r (mod m) ⇒ t*M = r - ans (mod m), g = exgcd(M, m, t, y)\n• 无解条件: (r - ans) % g != 0; 更新: mod_step = m/g, t = t*((r-ans)/g)%mod_step, ans += t*M, M *= mod_step\n• 防溢出注意: 中间计算必须使用 i128 (__int128_t)！",
+            "file": os.path.join(repo_dir, "src/math/excrt.cpp")
         }
     ]
 

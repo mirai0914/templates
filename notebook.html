@@ -553,7 +553,7 @@ struct ODT {
 
     void build(const vector&lt;int&gt;& a) {
         n = a.size() - 1; roots.assign(n + 1, 0);
-        tr.clear(); tr.emplace_back();
+        tr.clear(); tr.reserve(n * 20 + 5); tr.emplace_back();
         vals.assign(a.begin() + 1, a.end());
         sort(vals.begin(), vals.end());
         vals.erase(unique(vals.begin(), vals.end()), vals.end());
@@ -588,6 +588,55 @@ struct ODT {
     }
     int query_path_kth(int u, int v, int lca, int fa_lca, int k) const {
         return vals[query_tree(roots[u], roots[v], roots[lca], roots[fa_lca], 1, m, k) - 1];
+    }
+};</pre>
+            </div>
+        </div>
+
+        <!-- 7. 扩展中国剩余定理 EXCRT -->
+        <div class="section-card">
+            <div class="section-header">7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组求解)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    • 联立: ans + t*M = r (mod m) ⇒ t*M = r - ans (mod m), g = exgcd(M, m, t, y)<br>
+                    • 无解: (r - ans) % g != 0; 更新: mod_step = m/g, t = t*((r-ans)/g)%mod_step, ans += t*M, M *= mod_step<br>
+                    • <b>防溢出:</b> 中间乘法计算必须使用 i128 (__int128_t)！
+                </div>
+<pre>using ll = long long;
+using i128 = __int128_t;
+
+struct EXCRT {
+    ll ans = 0, M = 1;
+    bool ok = true;
+
+    EXCRT() {}
+
+    static ll exgcd(ll a, ll b, ll&amp; x, ll&amp; y) {
+        if (!b) { x = 1; y = 0; return a; }
+        ll g = exgcd(b, a % b, y, x);
+        y -= a / b * x;
+        return g;
+    }
+
+    bool add(ll r, ll m) {
+        if (!ok) return false;
+        r = (r % m + m) % m;
+        ll t, y, g = exgcd(M, m, t, y), diff = r - ans;
+        if (diff % g != 0) { ok = false; return false; }
+        ll mod_step = m / g;
+        t = (i128)t * (diff / g) % mod_step;
+        if (t &lt; 0) t += mod_step;
+        ans += t * M;
+        M *= mod_step;
+        ans = (ans % M + M) % M;
+        return true;
+    }
+
+    static pair&lt;ll, ll&gt; solve(const vector&lt;ll&gt;&amp; r, const vector&lt;ll&gt;&amp; m) {
+        EXCRT s;
+        for (int i = 0; i &lt; (int)r.size(); ++i)
+            if (!s.add(r[i], m[i])) return {-1, -1};
+        return {s.ans, s.M};
     }
 };</pre>
             </div>

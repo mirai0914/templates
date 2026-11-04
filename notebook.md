@@ -27,6 +27,7 @@ cin.tie(nullptr)->sync_with_stdio(false);
 - [4. 斯特林数 (O(N^2) 递推 + NTT 单行求解)](#4-斯特林数-on2-递推--ntt-单行求解)
 - [5. 珂朵莉树 (ODT - Old Driver Tree / Chtholly Tree)](#5-珂朵莉树-odt---old-driver-tree--chtholly-tree)
 - [6. 主席树 (可持久化权值线段树 / 静态区间第 k 小)](#6-主席树-可持久化权值线段树--静态区间第-k-小)
+- [7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组求解)](#7-扩展中国剩余定理-excrt---不互质同余方程组求解)
 
 ---
 
@@ -490,6 +491,7 @@ struct PersistentSegTree {
         n = a.size() - 1;
         roots.assign(n + 1, 0);
         tr.clear();
+        tr.reserve(n * 20 + 5);
         tr.emplace_back(); // 0 号空节点
 
         vals.assign(a.begin() + 1, a.end());
@@ -529,6 +531,77 @@ struct PersistentSegTree {
     }
     int query_path_kth(int u, int v, int lca, int fa_lca, int k) const {
         return vals[query_tree(roots[u], roots[v], roots[lca], roots[fa_lca], 1, m, k) - 1];
+    }
+};
+```
+
+---
+
+## 7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组求解)
+
+> **公式与避坑备忘**:  
+> - 联立方程: 已有前 $k-1$ 个方程特解 $ans$，模数 $M = \text{lcm}(m_1 \dots m_{k-1})$。加入方程 $x \equiv r \pmod m$ $\implies t \cdot M \equiv r - ans \pmod m$  
+> - 解线性同余: $g = \text{exgcd}(M, m, t, y)$。若 $(r - ans) \pmod g \neq 0$ 则**无解**  
+> - 更新: 令 $mod\_step = m / g$，$t \equiv t \cdot \frac{r - ans}{g} \pmod{mod\_step}$，$ans \leftarrow ans + t \cdot M$，$M \leftarrow M \cdot mod\_step$  
+> - **防溢出**: 中间乘法计算务必使用 `i128` (`__int128_t`)！
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+using i128 = __int128_t;
+
+struct EXCRT {
+    ll ans = 0; // 当前最小非负解
+    ll M = 1;   // 当前公共模数 lcm
+    bool ok = true; // 是否仍有解
+
+    EXCRT() {}
+
+    // 扩展欧几里得求 a*x + b*y = gcd(a, b)
+    static ll exgcd(ll a, ll b, ll& x, ll& y) {
+        if (!b) {
+            x = 1; y = 0;
+            return a;
+        }
+        ll g = exgcd(b, a % b, y, x);
+        y -= a / b * x;
+        return g;
+    }
+
+    // 动态并入一个同余方程 x = r (mod m)
+    bool add(ll r, ll m) {
+        if (!ok) return false;
+        r = (r % m + m) % m;
+
+        ll t, y;
+        ll g = exgcd(M, m, t, y);
+        ll diff = r - ans;
+
+        if (diff % g != 0) {
+            ok = false;
+            return false;
+        }
+
+        ll mod_step = m / g;
+        t = (i128)t * (diff / g) % mod_step;
+        if (t < 0) t += mod_step;
+
+        ans += t * M;
+        M *= mod_step;
+        ans = (ans % M + M) % M;
+        return true;
+    }
+
+    // 一行小封装: 一次性求解方程组 x = r[i] (mod m[i])
+    // 返回: {最小非负解 x, lcm 模数 M} (无解返回 {-1, -1})
+    static pair<ll, ll> solve(const vector<ll>& r, const vector<ll>& m) {
+        EXCRT s;
+        for (int i = 0; i < (int)r.size(); ++i) {
+            if (!s.add(r[i], m[i])) return {-1, -1};
+        }
+        return {s.ans, s.M};
     }
 };
 ```
