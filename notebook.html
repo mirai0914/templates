@@ -642,6 +642,100 @@ struct EXCRT {
             </div>
         </div>
 
+
+        <!-- 8. 欧拉降幂与单点欧拉函数 -->
+        <div class="section-card">
+            <div class="section-header">8. 欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    • <b>单点欧拉函数:</b> O(√n) 试除质因数, phi(n) = n * ∏_{p|n} (p-1)/p<br>
+                    • <b>扩展欧拉定理:</b> 无需满足 gcd(a, m) = 1: a^b ≡ a^b (b &lt; φ(m)); a^b ≡ a^{(b % φ(m)) + φ(m)} (b ≥ φ(m)) (mod m)<br>
+                    • <b>可选扩展:</b> 递归超高幂塔 a_1^a_2^...^a_k % m: query_tower
+                </div>
+<pre>using ll = long long;
+using i128 = __int128_t;
+
+struct EulerPower {
+    ll get_phi(ll n) const {
+        ll ans = n;
+        for (ll i = 2; i * i &lt;= n; ++i) {
+            if (n % i == 0) {
+                ans = ans / i * (i - 1);
+                while (n % i == 0) n /= i;
+            }
+        }
+        if (n &gt; 1) ans = ans / n * (n - 1);
+        return ans;
+    }
+
+    ll ksm(ll a, ll b, ll m) const {
+        ll res = 1 % m;
+        a %= m;
+        while (b &gt; 0) {
+            if (b &amp; 1) res = (i128)res * a % m;
+            a = (i128)a * a % m;
+            b &gt;&gt;= 1;
+        }
+        return res;
+    }
+
+    ll pow_str(ll a, const string&amp; b, ll m) const {
+        if (m == 1) return 0;
+        ll p = get_phi(m);
+        i128 exp = 0;
+        bool ge = false;
+        for (char c : b) {
+            exp = exp * 10 + (c - '0');
+            if (exp &gt;= p) { ge = true; exp %= p; }
+        }
+        if (ge) exp += p;
+        return ksm(a, (ll)exp, m);
+    }
+
+    ll pow_num(ll a, ll b, ll m) const {
+        if (m == 1) return 0;
+        ll p = get_phi(m);
+        if (b &gt;= p) b = (b % p) + p;
+        return ksm(a, b, m);
+    }
+
+    // --- 可选扩展: 幂塔递归降幂 ---
+    ll ksm_ge(ll a, ll b, ll m) const {
+        ll res = 1;
+        bool flag = (1 &gt;= m);
+        if (res &gt;= m) res %= m;
+        if (a &gt;= m) { flag = true; a %= m; }
+        while (b &gt; 0) {
+            if (b &amp; 1) {
+                i128 t = (i128)res * a;
+                if (t &gt;= m) flag = true;
+                res = t % m;
+            }
+            if (b &gt; 1) {
+                i128 t = (i128)a * a;
+                if (t &gt;= m) flag = true;
+                a = t % m;
+            }
+            b &gt;&gt;= 1;
+        }
+        return res + (flag ? m : 0);
+    }
+
+    ll power_tower(const vector&lt;ll&gt;&amp; a, int l, int r, ll m) const {
+        if (l &gt; r || m == 1) return 1 &gt;= m ? 1 % m + m : 1;
+        if (l == r) return a[l] &gt;= m ? a[l] % m + m : a[l];
+        ll p = get_phi(m);
+        ll exp = power_tower(a, l + 1, r, p);
+        return ksm_ge(a[l], exp, m);
+    }
+
+    ll query_tower(const vector&lt;ll&gt;&amp; a, int l, int r, ll m) const {
+        return power_tower(a, l, r, m) % m;
+    }
+};</pre>
+            </div>
+        </div>
+
     </div>
 </div>
 

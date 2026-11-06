@@ -135,6 +135,12 @@ def create_notebook():
             "title": "扩展中国剩余定理 (EXCRT - 不互质模数同余方程组求解)",
             "formula": "• 联立方程: ans + t*M = r (mod m) ⇒ t*M = r - ans (mod m), g = exgcd(M, m, t, y)\n• 无解条件: (r - ans) % g != 0; 更新: mod_step = m/g, t = t*((r-ans)/g)%mod_step, ans += t*M, M *= mod_step\n• 防溢出注意: 中间计算必须使用 i128 (__int128_t)！",
             "file": os.path.join(repo_dir, "src/math/excrt.cpp")
+        },
+        {
+            "id": "8",
+            "title": "欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数",
+            "formula": "• 单点欧拉函数: O(sqrt(n)) 试除质因数, phi(n) = n * ∏_{p|n} (p-1)/p\n• 扩展欧拉降幂 (无条件适用): a^b ≡ a^b (b < phi(m)); a^b ≡ a^{(b % phi(m)) + phi(m)} (b ≥ phi(m)) (mod m)\n• 可选扩展: 幂塔递归降幂 query_tower",
+            "file": os.path.join(repo_dir, "src/math/euler_power.cpp")
         }
     ]
 
