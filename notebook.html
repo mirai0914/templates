@@ -736,6 +736,125 @@ struct EulerPower {
             </div>
         </div>
 
+
+        <!-- 9. 线性基与前缀线性基 -->
+        <div class="section-card">
+            <div class="section-header">9. 线性基 (Linear Basis / XOR Basis &amp; 前缀线性基)</div>
+            <div class="section-body">
+                <div class="formula-box">
+                    • <b>基础操作:</b> 维护异或基底，O(B) 插入、求最大/最小值、判断存在性；O(B²) 规范化后 O(B) 求第 k 小 (含 0 则 0 占位 k=1)<br>
+                    • <b>前缀线性基:</b> PrefixLinearBasis 贪心保留靠右元素，O(B) 在线回答区间 [l, r] 子集异或最大值
+                </div>
+<pre>using ll = long long;
+
+struct LinearBasis {
+    int B = 60, cnt = 0;
+    vector&lt;ll&gt; d, p;
+    bool has_zero = false, rebuilt = false;
+
+    LinearBasis(int b = 60) : B(b), d(b, 0) {}
+
+    void clear() {
+        d.assign(B, 0); p.clear();
+        cnt = 0; has_zero = rebuilt = false;
+    }
+
+    bool insert(ll x) {
+        rebuilt = false;
+        if (x == 0) { has_zero = true; return false; }
+        for (int i = B - 1; i &gt;= 0; --i) {
+            if ((x &gt;&gt; i) &amp; 1) {
+                if (!d[i]) { d[i] = x; cnt++; return true; }
+                x ^= d[i];
+            }
+        }
+        has_zero = true;
+        return false;
+    }
+
+    bool check(ll x) const {
+        for (int i = B - 1; i &gt;= 0; --i) {
+            if ((x &gt;&gt; i) &amp; 1) {
+                if (!d[i]) return false;
+                x ^= d[i];
+            }
+        }
+        return true;
+    }
+
+    ll query_max(ll base = 0) const {
+        ll ans = base;
+        for (int i = B - 1; i &gt;= 0; --i)
+            if ((ans ^ d[i]) &gt; ans) ans ^= d[i];
+        return ans;
+    }
+
+    ll query_min(bool allow_zero = false) const {
+        if (allow_zero &amp;&amp; has_zero) return 0;
+        for (int i = 0; i &lt; B; ++i) if (d[i]) return d[i];
+        return 0;
+    }
+
+    void rebuild() {
+        p.clear();
+        for (int i = 0; i &lt; B; ++i) {
+            if (d[i]) {
+                for (int j = i + 1; j &lt; B; ++j)
+                    if ((d[j] &gt;&gt; i) &amp; 1) d[j] ^= d[i];
+            }
+        }
+        for (int i = 0; i &lt; B; ++i) if (d[i]) p.push_back(d[i]);
+        rebuilt = true;
+    }
+
+    ll query_kth(ll k) {
+        if (!rebuilt) rebuild();
+        if (has_zero) --k;
+        if (k == 0) return 0;
+        if (p.size() &lt; 62 &amp;&amp; k &gt;= (1ULL &lt;&lt; p.size())) return -1;
+        ll ans = 0;
+        for (int i = 0; i &lt; (int)p.size(); ++i)
+            if ((k &gt;&gt; i) &amp; 1) ans ^= p[i];
+        return ans;
+    }
+
+    void merge(const LinearBasis&amp; other) {
+        for (int i = other.B - 1; i &gt;= 0; --i)
+            if (other.d[i]) insert(other.d[i]);
+        if (other.has_zero) has_zero = true;
+    }
+};
+
+// --- 可选扩展: 前缀线性基 (区间异或最大值) ---
+struct PrefixLinearBasis {
+    int B = 60;
+    vector&lt;ll&gt; d;
+    vector&lt;int&gt; pos;
+
+    PrefixLinearBasis(int b = 60) : B(b), d(b, 0), pos(b, 0) {}
+
+    void clear() { d.assign(B, 0); pos.assign(B, 0); }
+
+    void insert(ll x, int id) {
+        for (int i = B - 1; i &gt;= 0; --i) {
+            if ((x &gt;&gt; i) &amp; 1) {
+                if (!d[i]) { d[i] = x; pos[i] = id; return; }
+                if (pos[i] &lt; id) { swap(pos[i], id); swap(d[i], x); }
+                x ^= d[i];
+            }
+        }
+    }
+
+    ll query_max(int l, ll base = 0) const {
+        ll ans = base;
+        for (int i = B - 1; i &gt;= 0; --i)
+            if (pos[i] &gt;= l &amp;&amp; (ans ^ d[i]) &gt; ans) ans ^= d[i];
+        return ans;
+    }
+};</pre>
+            </div>
+        </div>
+
     </div>
 </div>
 

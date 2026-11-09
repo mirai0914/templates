@@ -141,6 +141,12 @@ def create_notebook():
             "title": "欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数",
             "formula": "• 单点欧拉函数: O(sqrt(n)) 试除质因数, phi(n) = n * ∏_{p|n} (p-1)/p\n• 扩展欧拉降幂 (无条件适用): a^b ≡ a^b (b < phi(m)); a^b ≡ a^{(b % phi(m)) + phi(m)} (b ≥ phi(m)) (mod m)\n• 可选扩展: 幂塔递归降幂 query_tower",
             "file": os.path.join(repo_dir, "src/math/euler_power.cpp")
+        },
+        {
+            "id": "9",
+            "title": "线性基 (Linear Basis / XOR Basis & 前缀线性基)",
+            "formula": "• 基础: 维护异或基底，O(B) 插入、求最大/最小值、判断存在性；O(B^2) 高斯消元规范化后 O(B) 求第 k 小 (含 0 则 0 占位 k=1)\n• 扩展: 前缀线性基 PrefixLinearBasis 贪心保留靠右元素，O(B) 在线回答区间 [l, r] 子集异或最大值",
+            "file": os.path.join(repo_dir, "src/math/linear_basis.cpp")
         }
     ]
 
