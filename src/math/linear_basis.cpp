@@ -24,11 +24,9 @@ using ll = long long;
  */
 struct LinearBasis {
     int B = 60;             // 最高有效位数 (默认支持 0 ~ 2^60-1)
-    vector<ll> d;           // 基向量数组: d[i] 的最高位必为第 i 位
-    vector<ll> p;           // 规范化后的基向量 (用于求第 k 小)
+    vector<ll> d, p;           // 基向量数组: d[i] 的最高位必为第 i 位 / 规范化后的基向量 (用于求第 k 小)
     int cnt = 0;            // 线性基当前的大小 (秩)
-    bool has_zero = false;  // 张成空间是否包含 0
-    bool rebuilt = false;   // 是否已规范化
+    bool has_zero = 0, rebuilt = 0;  // 张成空间是否包含 0 / 是否已规范化
 
     LinearBasis(int b = 60) : B(b), d(b, 0) {}
 
