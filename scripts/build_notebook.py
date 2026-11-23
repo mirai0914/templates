@@ -151,7 +151,7 @@ def create_notebook():
         {
             "id": "10",
             "title": "PBDS (Policy-Based Data Structures · 平衡树/防卡哈希/可并堆)",
-            "formula": "• 平衡树: order_of_key(x) 严格小于 x 的个数; find_by_order(k) 0-indexed 第 k 小迭代器\n• 避坑准则: 严禁传 less_equal<T>! 维护 multiset 须用 OrderedMultiSet 或 array<T, 2>{val, ++uid}\n• 防卡哈希: gp_hash_table 搭配 custom_hash (splitmix64 + 运行期时间戳) 防 CF Hack\n• 可并堆: priority_queue<T, less<T>, pairing_heap_tag> O(1) 合并 join, 支持 point_iterator 任意修改/删除",
+            "formula": "• 平衡树: order_of_key(x) 严格小于 x 的个数; find_by_order(k) 0-indexed 第 k 小迭代器\n• 多重集注意: 严禁传 less_equal<T>! 维护重复元素建议存 array<T, 2>{val, ++uid}\n• 防卡哈希: gp_hash_table 搭配 custom_hash (splitmix64) 防 CF Hack\n• 可并堆: priority_queue<T, less<T>, pairing_heap_tag> O(1) 合并 join",
             "file": os.path.join(repo_dir, "src/data_structure/pbds.cpp")
         }
     ]

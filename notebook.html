@@ -862,9 +862,9 @@ struct PrefixLinearBasis {
             <div class="section-body">
                 <div class="formula-box">
                     • <b>平衡树:</b> order_of_key(x) 严格小于 x 的个数; find_by_order(k) 0-indexed 第 k 小迭代器<br>
-                    • <b>多重集避坑:</b> 严禁传 less_equal&lt;T&gt;! 须使用封装好的 OrderedMultiSet 或 array&lt;T, 2&gt;{val, ++uid}<br>
-                    • <b>防卡哈希:</b> gp_hash_table 搭配 custom_hash (splitmix64 + 运行期时间戳) 彻底防止 CF Hack<br>
-                    • <b>可并配对堆:</b> priority_queue&lt;T, less&lt;T&gt;, pairing_heap_tag&gt; O(1) 合并 join, 支持 point_iterator 任意修改/删除
+                    • <b>多重集注意:</b> 严禁传 less_equal&lt;T&gt;! 维护重复元素建议存 array&lt;T, 2&gt;{val, ++uid}<br>
+                    • <b>防卡哈希:</b> gp_hash_table 搭配 custom_hash (splitmix64) 防 CF Hack<br>
+                    • <b>可并配对堆:</b> priority_queue&lt;T, less&lt;T&gt;, pairing_heap_tag&gt; O(1) 合并 join
                 </div>
 <pre>#include &lt;ext/pb_ds/assoc_container.hpp&gt;
 #include &lt;ext/pb_ds/tree_policy.hpp&gt;
@@ -872,45 +872,11 @@ struct PrefixLinearBasis {
 #include &lt;ext/pb_ds/priority_queue.hpp&gt;
 using namespace __gnu_pbds;
 
-// --- 模块 1: 基础平衡树 (单值无重) ---
+// --- 1. 平衡树声明 (默认单值无重) ---
 template &lt;typename T&gt;
 using ordered_set = tree&lt;T, null_type, less&lt;T&gt;, rb_tree_tag, tree_order_statistics_node_update&gt;;
 
-// --- 模块 2: 支持重复元素的高级平衡树 ---
-template &lt;typename T&gt;
-struct OrderedMultiSet {
-    int uid = 0;
-    ordered_set&lt;array&lt;T, 2&gt;&gt; tr;
-
-    void clear() { tr.clear(); uid = 0; }
-    void insert(T val) { tr.insert({val, ++uid}); }
-
-    bool erase_one(T val) {
-        auto it = tr.lower_bound({val, 0});
-        if (it != tr.end() &amp;&amp; (*it)[0] == val) { tr.erase(it); return true; }
-        return false;
-    }
-
-    int rank(T val) const { return tr.order_of_key({val, 0}) + 1; }
-    T kth(int k) const { return (*tr.find_by_order(k - 1))[0]; }
-
-    array&lt;ll, 2&gt; prev_val(T val) const {
-        int rk = tr.order_of_key({val, 0});
-        if (rk == 0) return {0, 0};
-        return {1, (*tr.find_by_order(rk - 1))[0]};
-    }
-
-    array&lt;ll, 2&gt; next_val(T val) const {
-        auto it = tr.lower_bound({val + 1, 0});
-        if (it == tr.end()) return {0, 0};
-        return {1, (*it)[0]};
-    }
-
-    int size() const { return tr.size(); }
-    bool empty() const { return tr.empty(); }
-};
-
-// --- 模块 3: 高性能防卡哈希表 ---
+// --- 2. 防卡哈希表 (gp_hash_table + splitmix64) ---
 struct custom_hash {
     static uint64_t splitmix64(uint64_t x) {
         x += 0x9e3779b97f4a7c15;
@@ -926,9 +892,21 @@ struct custom_hash {
 template &lt;typename K, typename V&gt; using safe_map = gp_hash_table&lt;K, V, custom_hash&gt;;
 template &lt;typename K&gt; using safe_set = gp_hash_table&lt;K, null_type, custom_hash&gt;;
 
-// --- 模块 4: 可并配对堆 (O(1) join, 支持 point_iterator 任意修改/删除) ---
+// --- 3. 可并配对堆 (默认大根堆) ---
 template &lt;typename T, typename Compare = less&lt;T&gt;&gt;
-using heap = __gnu_pbds::priority_queue&lt;T, Compare, pairing_heap_tag&gt;;</pre>
+using heap = __gnu_pbds::priority_queue&lt;T, Compare, pairing_heap_tag&gt;;
+
+/* 基础用法:
+   ordered_set&lt;int&gt; tr; tr.insert(10); tr.insert(20);
+   int rk = tr.order_of_key(20);        // 1 (严格小于 20 的个数)
+   int v = *tr.find_by_order(0);        // 10 (0-indexed 第 0 小)
+   auto it = tr.lower_bound(20); tr.erase(it);
+
+   safe_map&lt;ll, int&gt; mp; mp[123] = 1;
+
+   heap&lt;int&gt; h1, h2; h1.push(10); h2.push(20);
+   h1.join(h2);                         // O(1) 将 h2 全部并入 h1，h2 置空
+*/</pre>
             </div>
         </div>
 
