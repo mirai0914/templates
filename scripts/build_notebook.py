@@ -147,6 +147,12 @@ def create_notebook():
             "title": "线性基 (Linear Basis / XOR Basis & 前缀线性基)",
             "formula": "• 基础: 维护异或基底，O(B) 插入、求最大/最小值、判断存在性；O(B^2) 高斯消元规范化后 O(B) 求第 k 小 (含 0 则 0 占位 k=1)\n• 扩展: 前缀线性基 PrefixLinearBasis 贪心保留靠右元素，O(B) 在线回答区间 [l, r] 子集异或最大值",
             "file": os.path.join(repo_dir, "src/math/linear_basis.cpp")
+        },
+        {
+            "id": "10",
+            "title": "PBDS (Policy-Based Data Structures · 平衡树/防卡哈希/可并堆)",
+            "formula": "• 平衡树: order_of_key(x) 严格小于 x 的个数; find_by_order(k) 0-indexed 第 k 小迭代器\n• 避坑准则: 严禁传 less_equal<T>! 维护 multiset 须用 OrderedMultiSet 或 array<T, 2>{val, ++uid}\n• 防卡哈希: gp_hash_table 搭配 custom_hash (splitmix64 + 运行期时间戳) 防 CF Hack\n• 可并堆: priority_queue<T, less<T>, pairing_heap_tag> O(1) 合并 join, 支持 point_iterator 任意修改/删除",
+            "file": os.path.join(repo_dir, "src/data_structure/pbds.cpp")
         }
     ]
 
