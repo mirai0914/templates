@@ -6,28 +6,26 @@ using ll = long long;
 using i128 = __int128_t;
 
 /**
- * =========================================================================
- * 扩展中国剩余定理 (EXCRT - Extended Chinese Remainder Theorem)
- * =========================================================================
- * 适用场景: 求解同余方程组 x = r_i (mod m_i)，模数 m_i 不保证两两互质。
- * 复杂度: 单次合并 O(log m_i)，总时间复杂度 O(n log(lcm(m_i)))，空间 O(1)。
- * 核心推导备忘 (赛场速查):
- *   已有前 k-1 个方程的特解 ans，模数 M = lcm(m_1 ... m_{k-1})，通解为 ans + t * M。
- *   联立第 k 个方程 ans + t * M = r (mod m) => t * M = r - ans (mod m)。
- *   令 g = exgcd(M, m, t, y)，若 (r - ans) % g != 0 则无解。
- *   否则令 mod_step = m / g，t = t * ((r - ans)/g) % mod_step。
- *   更新 ans += t * M, M *= mod_step, ans %= M。
- * 注意: 中间乘法必须用 i128 防止溢出！
+ * 扩展中国剩余定理 (EXCRT - 求解模数不互质同余方程组 x = r_i mod m_i)
+ * 复杂度: 单次合并 O(log m_i), 总计 O(n log(lcm)), 空间 O(1)
+ * 核心推导: ans + t*M = r (mod m) => t*M = r - ans (mod m), 全程 i128 防溢出!
  */
 struct EXCRT {
-    ll ans = 0; // 当前最小非负解
-    ll M = 1;   // 当前公共模数 lcm
-    bool ok = true; // 是否仍有解
+    ll ans = 0;    // 当前最小非负解
+    ll M = 1;      // 当前公共模数 lcm
+    bool ok = true;
 
     EXCRT() {}
 
-    // 扩展欧几里得求 a*x + b*y = gcd(a, b)
-    ll exgcd(ll a, ll b, ll& x, ll& y) {
+    // 功能: 清空状态 (多测安全)
+    void clear() {
+        ans = 0;
+        M = 1;
+        ok = true;
+    }
+
+    // 功能: 扩展欧几里得求 a*x + b*y = gcd(a, b)
+    ll exgcd(ll a, ll b, ll& x, ll& y) const {
         if (!b) {
             x = 1; y = 0;
             return a;
@@ -38,7 +36,6 @@ struct EXCRT {
     }
 
     // 功能: 动态并入一个同余方程 x = r (mod m)
-    // 传参: r 余数, m 模数
     // 返回: 并入后方程组是否有解
     bool add(ll r, ll m) {
         if (!ok) return false;
@@ -46,28 +43,26 @@ struct EXCRT {
 
         ll t, y;
         ll g = exgcd(M, m, t, y);
-        ll diff = r - ans;
-
+        i128 diff = (i128)r - ans;
         if (diff % g != 0) {
             ok = false;
             return false;
         }
 
         ll mod_step = m / g;
-        t = (i128)t * (diff / g) % mod_step;
-        if (t < 0) t += mod_step;
+        i128 k = (diff / g) % mod_step;
+        t = ((i128)t * k % mod_step + mod_step) % mod_step;
 
-        ans += t * M;
-        M *= mod_step;
-        ans = (ans % M + M) % M;
+        i128 new_M = (i128)M * mod_step;
+        ans = (ll)(((i128)ans + (i128)t * M) % new_M);
+        M = (ll)new_M;
         return true;
     }
 
     // 功能: 一次性求解方程组 x = r[i] (mod m[i])
-    // 传参: r 余数向量, m 模数向量
     // 返回: {最小非负解 x, lcm 模数 M} (无解返回 {-1, -1})
     array<ll, 2> solve(const vector<ll>& r, const vector<ll>& m) {
-        ans = 0; M = 1; ok = true;
+        clear();
         for (int i = 0; i < (int)r.size(); ++i) {
             if (!add(r[i], m[i])) return {-1, -1};
         }
@@ -78,14 +73,5 @@ struct EXCRT {
 /*
 使用示范:
     EXCRT excrt;
-
-    // 1. 一次性求解方程组:
-    // x = 2 (mod 3), x = 3 (mod 5), x = 2 (mod 7)
-    vector<ll> r = {2, 3, 2}, m = {3, 5, 7};
-    auto [ans, M] = excrt.solve(r, m); // ans = 23, M = 105
-
-    // 2. 动态逐个加入:
-    excrt.add(2, 4);
-    excrt.add(4, 6); // ans = 10, M = 12
-    if (!excrt.ok) cout << "No Solution\n";
+    auto [ans, M] = excrt.solve({2, 3, 2}, {3, 5, 7}); // ans = 23, M = 105
 */

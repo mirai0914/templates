@@ -2,7 +2,7 @@
 
 > **维护者**: `mirai_39` / `mirai0914`  
 > **目标**: CCPC / ICPC 赛站冲银  
-> **原则**: 纯血 `vector` · `struct` 自闭环封装 · 杜绝裸数组与 `memset` · 纯正竞赛风
+> **原则**: 纯血 `vector` · `struct` 自闭环封装 · 杜绝裸数组与 `memset` · 纯正竞赛风  
 
 ---
 
@@ -21,41 +21,59 @@ cin.tie(nullptr)->sync_with_stdio(false);
 
 ## 目录索引
 
-- [1. 欧拉线性筛 (素数 + 积性函数 phi & mu)](#1-欧拉线性筛-素数--积性函数-phi--mu)
-- [2. 快速数论变换 (NTT 多项式乘法 / 快速幂 / 分治连乘)](#2-快速数论变换-ntt-多项式乘法--快速幂--分治连乘)
+- [1. 欧拉线性筛 (素数筛 + phi & mu)](#1-欧拉线性筛-素数筛--phi--mu)
+- [2. 快速数论变换 (NTT 卷积 / 快速幂 / 分治连乘)](#2-快速数论变换-ntt-卷积--快速幂--分治连乘)
 - [3. 分拆数 (五边形数定理 + 根号分治 DP)](#3-分拆数-五边形数定理--根号分治-dp)
-- [4. 斯特林数 (O(N^2) 递推 + NTT 单行求解)](#4-斯特林数-on2-递推--ntt-单行求解)
-- [5. 珂朵莉树 (ODT - Old Driver Tree / Chtholly Tree)](#5-珂朵莉树-odt---old-driver-tree--chtholly-tree)
-- [6. 主席树 (可持久化权值线段树 / 静态区间第 k 小)](#6-主席树-可持久化权值线段树--静态区间第-k-小)
-- [7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组求解)](#7-扩展中国剩余定理-excrt---不互质同余方程组求解)
+- [4. 斯特林数 (O(N^2) 递推打表 + NTT 单行求解)](#4-斯特林数-on2-递推打表--ntt-单行求解)
+- [5. 珂朵莉树 (ODT - Old Driver Tree)](#5-珂朵莉树-odt---old-driver-tree)
+- [6. 主席树 (可持久化权值线段树 / 静态 & 树上第 k 小)](#6-主席树-可持久化权值线段树--静态--树上第-k-小)
+- [7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组)](#7-扩展中国剩余定理-excrt---不互质同余方程组)
 - [8. 欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数](#8-欧拉降幂-扩展欧拉定理-与单点大数欧拉函数)
-- [9. 线性基 (Linear Basis / XOR Basis & 前缀线性基)](#9-线性基-linear-basis--xor-basis--前缀线性基)
-- [10. PBDS (Policy-Based Data Structures · 平衡树/防卡哈希/可并堆)](#10-pbds-policy-based-data-structures--平衡树防卡哈希可并堆)
+- [9. 线性基 (Linear Basis & 前缀区间线性基)](#9-线性基-linear-basis--前缀区间线性基)
+- [10. PBDS (平衡树 ordered_set / 防卡哈希 / 可并配对堆)](#10-pbds-平衡树-ordered-set--防卡哈希--可并配对堆)
 
 ---
 
-## 1. 欧拉线性筛 (素数 + 积性函数 phi & mu)
+## 1. 欧拉线性筛 (素数筛 + phi & mu)
 
-> **公式备忘**:  
-> - $\phi(p) = p - 1$；若 $i \pmod p == 0$ 则 $\phi(i \cdot p) = \phi(i) \cdot p$；否则 $\phi(i \cdot p) = \phi(i) \cdot (p - 1)$  
-> - $\mu(1) = 1, \mu(p) = -1$；若 $i \pmod p == 0$ 则 $\mu(i \cdot p) = 0$；否则 $\mu(i \cdot p) = -\mu(i)$
+> **核心公式与备忘**:  
+> - $\phi(p) = p - 1$；若 $i \bmod p = 0$ 则 $\phi(ip) = \phi(i) \cdot p$；否则 $\phi(ip) = \phi(i) \cdot (p - 1)$  
+> - $\mu(1) = 1, \mu(p) = -1$；若 $i \bmod p = 0$ 则 $\mu(ip) = 0$；否则 $\mu(ip) = -\mu(i)$  
 
 ```cpp
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
-// 模块 1: 基础欧拉筛 (素数)
+using ll = long long;
+
+/**
+ * 欧拉线性筛 (基础素数筛 + 积性函数 phi & mu)
+ * 复杂度: 时间 O(N), 空间 O(N)
+ */
+
+// 模块 1: 基础欧拉筛 (素数线性筛)
 struct EulerSieve {
     int n = 0;
     vector<int> prm;
-    vector<bool> isp; // isp[x] == false 表示 x 为质数
+    vector<bool> isp; // isp[x] == false 表示 x 是质数
 
-    EulerSieve(int max_n = 0) { if (max_n > 0) build(max_n); }
+    EulerSieve(int max_n = 0) {
+        if (max_n > 0) build(max_n);
+    }
+
+    // 功能: 线性筛预处理 1 ~ max_n 内所有素数
+    // 传参: max_n 预处理上界
     void build(int max_n) {
-        n = max_n; prm.clear(); isp.assign(n + 1, false);
+        if (max_n < 0) return;
+        n = max_n;
+        prm.clear();
+        isp.assign(n + 1, false);
+
         if (n >= 0) isp[0] = true;
         if (n >= 1) isp[1] = true;
-        for (int i = 2; i <= n; i++) {
+
+        for (int i = 2; i <= n; ++i) {
             if (!isp[i]) prm.push_back(i);
             for (int p : prm) {
                 if (1LL * i * p > n) break;
@@ -64,26 +82,46 @@ struct EulerSieve {
             }
         }
     }
-    bool is_prime(int x) const { return x >= 2 && x <= n && !isp[x]; }
+
+    // 功能: O(1) 判定 x 是否为质数
+    bool is_prime(int x) const {
+        if (x < 2 || x > n) return false;
+        return !isp[x];
+    }
 };
 
 // 模块 2: 扩展欧拉筛 (素数 + 欧拉函数 phi + 莫比乌斯函数 mu)
 struct MultiplicativeSieve {
     int n = 0;
-    vector<int> prm, phi, mu;
+    vector<int> prm;
     vector<bool> isp;
+    vector<int> phi, mu;
 
-    MultiplicativeSieve(int max_n = 0) { if (max_n > 0) build(max_n); }
+    MultiplicativeSieve(int max_n = 0) {
+        if (max_n > 0) build(max_n);
+    }
+
+    // 功能: 线性筛同时预处理素数表、phi[1..n] 与 mu[1..n]
+    // 传参: max_n 预处理上界
     void build(int max_n) {
-        n = max_n; prm.clear();
+        if (max_n < 0) return;
+        n = max_n;
+        prm.clear();
         isp.assign(n + 1, false);
-        phi.assign(n + 1, 0); mu.assign(n + 1, 0);
+        phi.assign(n + 1, 0);
+        mu.assign(n + 1, 0);
+
         if (n >= 0) isp[0] = true;
-        if (n >= 1) { isp[1] = true; phi[1] = 1; mu[1] = 1; }
-        for (int i = 2; i <= n; i++) {
+        if (n >= 1) {
+            isp[1] = true;
+            phi[1] = mu[1] = 1;
+        }
+
+        for (int i = 2; i <= n; ++i) {
             if (!isp[i]) {
                 prm.push_back(i);
-                phi[i] = i - 1; mu[i] = -1;
+                phi[i] = i - 1;
+                mu[i] = -1;
             }
             for (int p : prm) {
                 if (1LL * i * p > n) break;
@@ -99,47 +137,85 @@ struct MultiplicativeSieve {
             }
         }
     }
+
+    // 功能: O(1) 判定 x 是否为质数
+    bool is_prime(int x) const {
+        if (x < 2 || x > n) return false;
+        return !isp[x];
+    }
 };
+
+/*
+使用示范:
+    EulerSieve es(1000000);
+    bool ok = es.is_prime(998244353);
+
+    MultiplicativeSieve ms(1000000);
+    int p10 = ms.phi[10]; // 4
+    int m6 = ms.mu[6];    // 1
+*/
 ```
 
 ---
 
-## 2. 快速数论变换 (NTT 多项式乘法 / 快速幂 / 分治连乘)
+## 2. 快速数论变换 (NTT 卷积 / 快速幂 / 分治连乘)
 
-> **特性**: 模数 $MOD = 998244353$，原根 $G = 3$  
-> - `mult`: $\mathcal{O}((N + M) \log(N + M))$  
-> - `poly_pow`: $\mathcal{O}(L \log L \log k)$  
-> - `poly_prod`: $\mathcal{O}(N \log^2 N)$
+> **核心公式与备忘**:  
+> - 模数固定 $998244353$，原根 $G = 3$  
+> - `mult`: $\mathcal{O}(N \log N)$；`poly_pow`: $\mathcal{O}(L \log L \log k)$；`poly_prod`: $\mathcal{O}(N \log^2 N)$  
 
 ```cpp
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
+using ll = long long;
+
+/**
+ * 快速数论变换 (NTT - 模数 998244353, 原根 G = 3)
+ * 复杂度: mult O(N log N), poly_pow O(L log L log k), poly_prod O(N log^2 N)
+ */
 struct NTT {
-    static constexpr int MOD = 998244353;
+    const int MOD = 998244353;
     const int G = 3;
 
-    long long ksm(long long a, long long b) const {
-        long long res = 1; a %= MOD;
-        for (; b; b >>= 1, a = a * a % MOD) if (b & 1) res = res * a % MOD;
+    // 功能: 快速幂 a^b % MOD
+    // 传参: a 底数, b 指数
+    ll ksm(ll a, ll b) const {
+        ll res = 1;
+        a = (a % MOD + MOD) % MOD;
+        for (; b > 0; b >>= 1, a = a * a % MOD) {
+            if (b & 1) res = res * a % MOD;
+        }
         return res;
     }
-    long long inv(long long a) const { return ksm(a, MOD - 2); }
 
+    // 功能: 费马小定理求逆元
+    // 传参: a 待求逆元的整数
+    ll inv(ll a) const {
+        return ksm(a, MOD - 2);
+    }
+
+    // 功能: NTT / INTT 核心变换 (系数 <-> 点值)
+    // 传参: a 系数数组 (长度需为 2^k), inv_flag false: 正变换 / true: 逆变换
     void transf(vector<int>& a, bool inv_flag) const {
-        int n = a.size(); if (n <= 1) return;
+        int n = a.size();
+        if (n <= 1) return;
+
         vector<int> rev(n, 0);
         int bit = __builtin_ctz(n);
         for (int i = 0; i < n; ++i) {
             rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (bit - 1));
             if (i < rev[i]) swap(a[i], a[rev[i]]);
         }
+
         for (int len = 2; len <= n; len <<= 1) {
-            long long wlen = ksm(G, (MOD - 1) / len);
+            ll wlen = ksm(G, (MOD - 1) / len);
             if (inv_flag) wlen = inv(wlen);
             int half = len >> 1;
+
             for (int i = 0; i < n; i += len) {
-                long long w = 1;
+                ll w = 1;
                 for (int j = 0; j < half; ++j) {
                     int u = a[i + j];
                     int v = 1LL * a[i + j + half] * w % MOD;
@@ -149,42 +225,63 @@ struct NTT {
                 }
             }
         }
+
         if (inv_flag) {
-            long long inv_n = inv(n);
-            for (int i = 0; i < n; ++i) a[i] = 1LL * a[i] * inv_n % MOD;
+            ll inv_n = inv(n);
+            for (int i = 0; i < n; ++i) {
+                a[i] = 1LL * a[i] * inv_n % MOD;
+            }
         }
     }
 
-    // 多项式乘法
+    // 功能: 多项式乘法 (卷积) C(x) = A(x) * B(x)
+    // 传参: a, b 多项式系数向量 (下标 i 为 x^i 项系数)
+    // 返回: 卷积后的系数向量 (size = deg(A) + deg(B) + 1)
     vector<int> mult(vector<int> a, vector<int> b) const {
         if (a.empty() || b.empty()) return {};
-        int sz = a.size() + b.size() - 1, n = 1;
+        int sz = a.size() + b.size() - 1;
+        int n = 1;
         while (n < sz) n <<= 1;
-        a.resize(n, 0); b.resize(n, 0);
-        transf(a, 0); transf(b, 0);
-        for (int i = 0; i < n; ++i) a[i] = 1LL * a[i] * b[i] % MOD;
-        transf(a, 1); a.resize(sz);
+
+        a.resize(n, 0);
+        b.resize(n, 0);
+        transf(a, false);
+        transf(b, false);
+        for (int i = 0; i < n; ++i) {
+            a[i] = 1LL * a[i] * b[i] % MOD;
+        }
+        transf(a, true);
+
+        a.resize(sz);
         return a;
     }
 
-    // 截断多项式快速幂
-    vector<int> poly_pow(vector<int> a, long long k, int lim = -1) const {
+    // 功能: 多项式快速幂 A^k(x)
+    // 传参: a 底数多项式系数, k 幂次, lim 最高次数限制 (截断到 <= lim 项, 默认 -1 不截断)
+    // 返回: 结果多项式系数向量
+    vector<int> poly_pow(vector<int> a, ll k, int lim = -1) const {
         vector<int> res = {1};
+        if (lim != -1 && (int)a.size() > lim + 1) a.resize(lim + 1);
         while (k > 0) {
             if (k & 1) {
                 res = mult(res, a);
                 if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
             }
-            a = mult(a, a);
-            if (lim != -1 && (int)a.size() > lim + 1) a.resize(lim + 1);
+            if (k > 1) {
+                a = mult(a, a);
+                if (lim != -1 && (int)a.size() > lim + 1) a.resize(lim + 1);
+            }
             k >>= 1;
         }
         return res;
     }
 
-    // 分治 NTT 求 n 个多项式连乘
+    // 功能: 分治 NTT 求 n 个多项式连乘 F_1(x) * ... * F_n(x)
+    // 传参: polys 待连乘的多项式集合, lim 最高次数限制 (默认 -1 不截断)
+    // 返回: 连乘结果多项式系数向量
     vector<int> poly_prod(const vector<vector<int>>& polys, int lim = -1) const {
         if (polys.empty()) return {1};
+
         auto dfs = [&](auto&& self, int l, int r) -> vector<int> {
             if (l == r) {
                 auto res = polys[l];
@@ -192,75 +289,120 @@ struct NTT {
                 return res;
             }
             int mid = l + (r - l) / 2;
-            auto left = self(self, l, mid);
-            auto right = self(self, mid + 1, r);
-            auto res = mult(left, right);
+            auto res = mult(self(self, l, mid), self(self, mid + 1, r));
             if (lim != -1 && (int)res.size() > lim + 1) res.resize(lim + 1);
             return res;
         };
+
         return dfs(dfs, 0, (int)polys.size() - 1);
     }
 };
+
+/*
+使用示范:
+    NTT ntt;
+    vector<int> c = ntt.mult({1, 2}, {3, 4});                // {3, 10, 8}
+    vector<int> p = ntt.poly_pow({1, 1}, 3, 2);              // {1, 3, 3}
+    vector<int> prod = ntt.poly_prod({{1, 1}, {1, 2}, {1, 3}}); // {1, 6, 11, 6}
+*/
 ```
 
 ---
 
 ## 3. 分拆数 (五边形数定理 + 根号分治 DP)
 
-> **公式备忘**:  
-> - 广义五边形数: $g_k = \frac{k(3k \mp 1)}{2}$，符号规律: `+ + - - + + - -`  
-> - 根号分治: 阈值 $B = \lfloor\sqrt{n}\rfloor$。$\le B$ 完全背包；$> B$ 整体 $+1$ 与新增 $B+1$ 滚动 DP。
+> **核心公式与备忘**:  
+> - **广义五边形数**: $g_k = \frac{k(3k \pm 1)}{2}$，符号规律 $+ + - - + + - -$  
+> - **根号分治 DP**: $\le B$ 完全背包；$> B$ 维护恰有 $c$ 个数之和为 $j$（整体 $+1$ 或新增 $B+1$）  
 
 ```cpp
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
-// 模块 1: 五边形数定理 (打表前 N 项, O(N sqrt(N)))
-struct PartitionPentagonal {
-    static constexpr int MOD = 998244353;
-    int n = 0;
-    vector<int> p;
+using ll = long long;
 
-    PartitionPentagonal(int max_n = 0) { if (max_n >= 0) build(max_n); }
+/**
+ * 分拆数 (五边形数定理预处理 + 根号分治 DP 单点求值)
+ * 复杂度: 时间 O(N sqrt(N)), 空间 O(N)
+ */
+
+// 模块 1: 五边形数定理求 0 ~ N 全量分拆数
+struct PartitionPentagonal {
+    const int MOD = 998244353;
+    int n = 0;
+    vector<int> p; // p[i] 为整数 i 的分拆数
+
+    PartitionPentagonal(int max_n = 0) {
+        if (max_n >= 0) build(max_n);
+    }
+
+    // 功能: 预处理 0 ~ max_n 的分拆数
+    // 传参: max_n 预处理上限
     void build(int max_n) {
-        n = max_n; p.assign(n + 1, 0); p[0] = 1;
-        vector<array<int, 2>> pent;
+        if (max_n < 0) return;
+        n = max_n;
+        p.assign(n + 1, 0);
+        p[0] = 1;
+
+        vector<array<int, 2>> pent; // 广义五边形数 {pos, sign}
         for (int k = 1;; ++k) {
-            long long g1 = 1LL * k * (3LL * k - 1) / 2;
-            long long g2 = 1LL * k * (3LL * k + 1) / 2;
+            ll g1 = 1LL * k * (3LL * k - 1) / 2;
+            ll g2 = 1LL * k * (3LL * k + 1) / 2;
             int sign = (k & 1) ? 1 : -1;
             if (g1 <= n) pent.push_back({(int)g1, sign});
             if (g2 <= n) pent.push_back({(int)g2, sign});
             if (g1 > n && g2 > n) break;
         }
+
         for (int i = 1; i <= n; ++i) {
-            long long val = 0;
+            ll val = 0;
             for (const auto& [g, sign] : pent) {
                 if (g > i) break;
-                val += (sign == 1 ? p[i - g] : -p[i - g]);
+                val += sign * p[i - g];
             }
-            val %= MOD; if (val < 0) val += MOD;
+            val %= MOD;
+            if (val < 0) val += MOD;
             p[i] = (int)val;
         }
     }
-    int query(int x) const { return (x < 0 || x > n) ? 0 : p[x]; }
+
+    // 功能: O(1) 查询 p(x) % MOD (越界返回 0)
+    int query(int x) const {
+        if (x < 0 || x > n) return 0;
+        return p[x];
+    }
 };
 
-// 模块 2: 根号分治 DP (单点求解与带限制分拆模型, O(N sqrt(N)))
+// 模块 2: 根号分治 DP (单点求 p(n) 或魔改带限制分拆数)
 struct PartitionSqrt {
-    static constexpr int MOD = 998244353;
+    const int MOD = 998244353;
+
+    // 功能: 单点计算整数 n 的分拆数 p(n) % MOD
+    // 传参: n 目标非负整数
+    // 返回: p(n) % MOD
     int calc(int n) const {
         if (n < 0) return 0;
         if (n <= 1) return 1;
+
         int B = sqrt(n);
-        vector<int> f(n + 1, 0); f[0] = 1;
-        for (int v = 1; v <= B; ++v)
+        while (1LL * (B + 1) * (B + 1) <= n) ++B;
+        while (1LL * B * B > n) --B;
+
+        // 1. 小数部分 (<= B): 完全背包
+        vector<int> f(n + 1, 0);
+        f[0] = 1;
+        for (int v = 1; v <= B; ++v) {
             for (int j = v; j <= n; ++j) {
                 f[j] += f[j - v];
                 if (f[j] >= MOD) f[j] -= MOD;
             }
+        }
+
+        // 2. 大数部分 (> B): 滚动 DP, 最多有 n / (B + 1) 个数
         vector<int> prev(n + 1, 0), cur(n + 1, 0), h(n + 1, 0);
         prev[0] = h[0] = 1;
+
         int max_c = n / (B + 1);
         for (int c = 1; c <= max_c; ++c) {
             cur.assign(n + 1, 0);
@@ -273,39 +415,66 @@ struct PartitionSqrt {
             }
             prev = move(cur);
         }
-        long long ans = 0;
-        for (int k = 0; k <= n; ++k)
+
+        // 3. 点积合并
+        ll ans = 0;
+        for (int k = 0; k <= n; ++k) {
             ans = (ans + 1LL * f[k] * h[n - k]) % MOD;
+        }
         return (int)ans;
     }
 };
+
+/*
+使用示范:
+    PartitionPentagonal pp(100000);
+    int p5 = pp.query(5);   // 7
+
+    PartitionSqrt ps;
+    int p100 = ps.calc(100); // 190569291
+*/
 ```
 
 ---
 
-## 4. 斯特林数 (O(N^2) 递推 + NTT 单行求解)
+## 4. 斯特林数 (O(N^2) 递推打表 + NTT 单行求解)
 
-> **公式备忘**:  
-> - 普通幂转下降幂: $x^n = \sum_{k=0}^n \left\{\begin{matrix} n \\ k \end{matrix}\right\} x^{\underline{k}}$  
-> - 上升幂转普通幂: $x^{\overline{n}} = \sum_{k=0}^n \left[\begin{matrix} n \\ k \end{matrix}\right] x^k = \prod_{i=0}^{n-1} (x + i)$  
-> - 下降幂转普通幂: $x^{\underline{n}} = \sum_{k=0}^n (-1)^{n-k} \left[\begin{matrix} n \\ k \end{matrix}\right] x^k$  
-> - 卷积容斥: $\left\{\begin{matrix} n \\ k \end{matrix}\right\} = \sum_{j=0}^k \frac{(-1)^{k-j}}{(k-j)!} \frac{j^n}{j!}$
+> **核心公式与备忘**:  
+> - 普通幂转下降幂: $x^n = \sum_{k=0}^n \{n, k\} x^{\underline{k}}$；上升幂: $x^{\overline{n}} = \sum_{k=0}^n [n, k] x^k$  
+> - 第二类卷积通项: $\{n, k\} = \sum_{j=0}^k \frac{(-1)^{k-j}}{(k-j)!} \cdot \frac{j^n}{j!}$  
 
 ```cpp
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
-// 模块 1: O(N^2) 斯特林数打表 (适合 N <= 3000 ~ 5000)
-struct StirlingTable {
-    static constexpr int MOD = 998244353;
-    int n = 0;
-    vector<vector<int>> s1, s2;
+using ll = long long;
 
-    StirlingTable(int max_n = 0) { if (max_n >= 0) build(max_n); }
+/**
+ * 斯特林数 (O(N^2) 递推打表 + NTT 单行求解)
+ * 常用恒等式:
+ *   x^n = sum {n, k} x^{underline k}
+ *   x^{overline n} = sum [n, k] x^k
+ */
+
+// 模块 1: O(N^2) 斯特林数打表 (适合 N <= 5000)
+struct StirlingTable {
+    const int MOD = 998244353;
+    int n = 0;
+    vector<vector<int>> s1, s2; // s1: 第一类 [n, k], s2: 第二类 {n, k}
+
+    StirlingTable(int max_n = 0) {
+        if (max_n >= 0) build(max_n);
+    }
+
+    // 功能: 预处理 0 ~ max_n 的第一类与第二类斯特林数
+    // 传参: max_n 预处理规模
     void build(int max_n) {
+        if (max_n < 0) return;
         n = max_n;
         s1.assign(n + 1, vector<int>(n + 1, 0));
         s2.assign(n + 1, vector<int>(n + 1, 0));
+
         s1[0][0] = s2[0][0] = 1;
         for (int i = 1; i <= n; ++i) {
             for (int j = 1; j <= i; ++j) {
@@ -314,18 +483,30 @@ struct StirlingTable {
             }
         }
     }
-    int query_s1(int x, int y) const { return (x < 0 || y < 0 || y > x || x > n) ? 0 : s1[x][y]; }
-    int query_s2(int x, int y) const { return (x < 0 || y < 0 || y > x || x > n) ? 0 : s2[x][y]; }
+
+    // 功能: 查询第一类斯特林数 [x, y]
+    int query_s1(int x, int y) const {
+        if (x < 0 || y < 0 || y > x || x > n) return 0;
+        return s1[x][y];
+    }
+
+    // 功能: 查询第二类斯特林数 {x, y}
+    int query_s2(int x, int y) const {
+        if (x < 0 || y < 0 || y > x || x > n) return 0;
+        return s2[x][y];
+    }
 };
 
-// 模块 2: O(N log N) / O(N log^2 N) 快速单行求解 (适合 N <= 10^5)
+// 模块 2: 快速单行求解 (适合 N <= 10^5, 依赖 NTT)
 struct StirlingRow {
-    static constexpr int MOD = 998244353;
+    const int MOD = 998244353;
 
-    // NTT 卷积求第二类斯特林数整行 O(N log N)
+    // 功能: NTT 卷积求解第二类斯特林数第 n 行 {n, 0 ... n} (O(N log N))
+    // 传参: n 行号, ntt NTT 实例
     template <typename NTTOp>
     vector<int> row_s2(int n, const NTTOp& ntt) const {
         if (n == 0) return {1};
+
         vector<int> fac(n + 1, 1), ifac(n + 1, 1);
         for (int i = 1; i <= n; ++i) fac[i] = 1LL * fac[i - 1] * i % MOD;
         ifac[n] = ntt.inv(fac[n]);
@@ -336,74 +517,104 @@ struct StirlingRow {
             a[i] = (i & 1) ? (MOD - ifac[i]) % MOD : ifac[i];
             b[i] = 1LL * ntt.ksm(i, n) * ifac[i] % MOD;
         }
+
         auto c = ntt.mult(a, b);
         c.resize(n + 1);
         return c;
     }
 
-    // 分治 NTT 求第一类斯特林数整行 O(N log^2 N)
+    // 功能: 分治 NTT 求解第一类斯特林数第 n 行 [n, 0 ... n] (O(N log^2 N))
+    // 传参: n 行号, ntt NTT 实例
     template <typename NTTOp>
     vector<int> row_s1(int n, const NTTOp& ntt) const {
         if (n == 0) return {1};
         vector<vector<int>> polys(n);
-        for (int i = 0; i < n; ++i) polys[i] = {i, 1}; // (x + i)
+        for (int i = 0; i < n; ++i) polys[i] = {i, 1};
         return ntt.poly_prod(polys);
     }
 };
+
+/*
+使用示范:
+    StirlingTable st(2000);
+    int v1 = st.query_s1(4, 2); // [4, 2] = 11
+    int v2 = st.query_s2(4, 2); // {4, 2} = 7
+
+    NTT ntt; StirlingRow sr;
+    vector<int> r2 = sr.row_s2(100000, ntt);
+    vector<int> r1 = sr.row_s1(100000, ntt);
+*/
 ```
 
 ---
 
-## 5. 珂朵莉树 (ODT - Old Driver Tree / Chtholly Tree)
+## 5. 珂朵莉树 (ODT - Old Driver Tree)
 
-> **核心避坑准则**:  
-> 所有区间操作涉及双端点 split 时，必须【**先 split(r + 1)，再 split(l)**】！否则先获得的左端点迭代器可能在右端点 split 执行 erase 时失效导致 RE！  
-> 结构: `set<array<int, 3>>`，每个节点为 `{l, r, v}`。在含随机区间推平 assign 的数据下，块数期望为 $\mathcal{O}(\log \log n)$。
+> **核心公式与备忘**:  
+> - **核心避坑**: 双端点操作必须 **先 `split(r + 1)`，再 `split(l)`**！  
+> - 存储结构 `set<array<ll, 3>>`，随机 `assign` 下块数期望 $\mathcal{O}(\log \log n)$  
 
 ```cpp
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
 using ll = long long;
 
+/**
+ * 珂朵莉树 (ODT - Old Driver Tree)
+ * 结构: set<array<ll, 3>>, 节点为 {l, r, v} (区间值支持 long long)
+ * 核心避坑: 双端点切分必须【先 split(r + 1)，再 split(l)】，防止迭代器失效!
+ */
 struct ODT {
-    set<array<int, 3>> s; // {l, r, v}
+    set<array<ll, 3>> s;
 
-    ODT(int n, ll v) { s.insert({1, n, (int)v}); }
+    ODT(int n, ll v = 0) {
+        s.insert({1, n, v});
+    }
 
-    // 切分包含 x 的区间为 [l, x-1] 与 [x, r]
+    // 功能: 切分包含位置 x 的区间为 [l, x-1] 和 [x, r]
+    // 传参: x 切分点 (将成为右区间左端点；若超出维护右界则返回 s.end())
     auto split(int x) {
-        auto it = prev(s.lower_bound({x + 1, 0, 0}));
-        if ((*it)[0] == x) return it;
+        auto it = s.lower_bound({(ll)x, -1LL, LLONG_MIN});
+        if (it != s.end() && (*it)[0] == x) return it;
+        if (it == s.begin()) return s.end();
+        --it;
+        if ((*it)[1] < x) return s.end();
         auto [l, r, v] = *it;
         s.erase(it);
         s.insert({l, x - 1, v});
         return s.insert({x, r, v}).first;
     }
 
-    // 区间推平赋值 [l, r] = v (必须先 r+1 再 l)
+    // 功能: 区间推平赋值 [l, r] = v (维持复杂度核心操作)
     void assign(int l, int r, ll v) {
-        auto itr = split(r + 1), itl = split(l);
+        auto itr = split(r + 1);
+        auto itl = split(l);
         s.erase(itl, itr);
-        s.insert({l, r, (int)v});
+        s.insert({l, r, v});
     }
 
-    // 区间加 [l, r] += v
+    // 功能: 区间加 [l, r] += v
     void add(int l, int r, ll v) {
-        auto itr = split(r + 1), itl = split(l);
-        vector<array<int, 3>> tmp;
-        for (auto it = itl; it != itr; ++it)
-            tmp.push_back({(*it)[0], (*it)[1], (int)((*it)[2] + v)});
+        auto itr = split(r + 1);
+        auto itl = split(l);
+        vector<array<ll, 3>> tmp;
+        for (auto it = itl; it != itr; ++it) {
+            tmp.push_back({(*it)[0], (*it)[1], (*it)[2] + v});
+        }
         s.erase(itl, itr);
-        for (auto& node : tmp) s.insert(node);
+        for (const auto& node : tmp) s.insert(node);
     }
 
-    // 区间第 k 小 (1-indexed)
+    // 功能: 查询区间 [l, r] 第 k 小值 (1-indexed)
     ll kth(int l, int r, int k) {
-        auto itr = split(r + 1), itl = split(l);
-        vector<array<int, 2>> a;
-        for (auto it = itl; it != itr; ++it)
+        auto itr = split(r + 1);
+        auto itl = split(l);
+        vector<array<ll, 2>> a;
+        for (auto it = itl; it != itr; ++it) {
             a.push_back({(*it)[2], (*it)[1] - (*it)[0] + 1});
+        }
         sort(a.begin(), a.end());
         for (const auto& [val, len] : a) {
             k -= len;
@@ -412,41 +623,59 @@ struct ODT {
         return -1;
     }
 
-    // 区间 p 次方和 sum_{i=l}^r (a[i]^p) % mod
+    // 功能: 查询区间 [l, r] 元素 p 次方和 sum_{i=l}^r (a[i]^p) % mod
     ll sum_pow(int l, int r, int p, ll mod) {
-        auto itr = split(r + 1), itl = split(l);
+        auto itr = split(r + 1);
+        auto itl = split(l);
         auto ksm = [&](ll base, int exp) -> ll {
-            ll res = 1 % mod; base %= mod;
+            ll res = 1 % mod;
+            base = (base % mod + mod) % mod;
             while (exp > 0) {
                 if (exp & 1) res = (__int128_t)res * base % mod;
-                base = (__int128_t)base * base % mod; exp >>= 1;
+                base = (__int128_t)base * base % mod;
+                exp >>= 1;
             }
             return res;
         };
         ll ans = 0;
         for (auto it = itl; it != itr; ++it) {
             ll len = (*it)[1] - (*it)[0] + 1;
-            ans = (ans + len * ksm((*it)[2], p)) % mod;
+            ans = (ans + len % mod * ksm((*it)[2], p)) % mod;
         }
         return ans;
     }
 };
+
+/*
+使用示范:
+    ODT odt(100000, 0);
+    odt.add(1, 10, 5);
+    odt.assign(3, 8, 7);
+    ll val = odt.kth(1, 10, 4);
+    ll sum2 = odt.sum_pow(1, 10, 2, 1000000007LL);
+*/
 ```
 
 ---
 
-## 6. 主席树 (可持久化权值线段树 / 静态区间第 k 小 / 树上第 k 小)
+## 6. 主席树 (可持久化权值线段树 / 静态 & 树上第 k 小)
 
-> **特性与复杂度**:  
-> - 基础核心: 前缀版本差分，在 $roots[r]$ 与 $roots[l - 1]$ 之间做差二分  
-> - 空间复杂度: $\mathcal{O}(N \log M)$ 纯血 `vector` 动态开点（0 号空节点）  
-> - 时间复杂度: 单次单点插入 $\mathcal{O}(\log M)$，单次区间查询 $\mathcal{O}(\log M)$，整树构建 $\mathcal{O}(N \log N)$  
-> - 可选扩展: 区间值域计数 `count_le` / `count_range`；树上路径第 k 小 `query_path_kth` (四树差分)
+> **核心公式与备忘**:  
+> - 前缀版本差分 `roots[r] - roots[l - 1]`，动态开点空间 $\mathcal{O}(N \log M)$，支持 `int` / `ll`。  
+> - 扩展：单趟区间值域计数 `count_range`、树上路径第 $k$ 小 `query_path_kth`。  
 
 ```cpp
+#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 
+using ll = long long;
+
+/**
+ * 主席树 (可持久化权值线段树 - Persistent Segment Tree)
+ * 复杂度: 空间 O(N log M) 动态开点, 单次插/查 O(log M), 建树 O(N log N)
+ * 特性: 支持 int / ll 输入数组 (1-indexed), 内置离散化与多测自闭环清空。
+ */
 struct PersistentSegTree {
     struct Node {
         int lc = 0, rc = 0, cnt = 0;
@@ -455,42 +684,46 @@ struct PersistentSegTree {
     int n = 0, m = 0;
     vector<int> roots;
     vector<Node> tr;
-    vector<int> vals;
+    vector<ll> vals; // 离散化去重原值表
 
     PersistentSegTree() {}
-    PersistentSegTree(const vector<int>& a) {
+    template <typename T>
+    PersistentSegTree(const vector<T>& a) {
         build(a);
     }
 
-    // 动态开点单点插入
+    // 功能: 在历史版本 p 基础上，值域位置 pos 计数 +1 生成新版本
+    // 传参: p 旧版本根编号, l, r 当前值域, pos 值域下标 (1 <= pos <= m)
     int insert(int p, int l, int r, int pos) {
         int u = tr.size();
         tr.push_back(tr[p]);
         tr[u].cnt++;
         if (l == r) return u;
         int mid = l + (r - l) / 2;
-        if (pos <= mid) {
-            tr[u].lc = insert(tr[p].lc, l, mid, pos);
-        } else {
-            tr[u].rc = insert(tr[p].rc, mid + 1, r, pos);
-        }
+        if (pos <= mid) tr[u].lc = insert(tr[p].lc, l, mid, pos);
+        else tr[u].rc = insert(tr[p].rc, mid + 1, r, pos);
         return u;
     }
 
-    // 两版本差分二分第 k 小下标
+    // 功能: 版本差分二分第 k 小值域下标 (u 为右界版本, v 为左界前驱版本)
     int query(int u, int v, int l, int r, int k) const {
         if (l == r) return l;
         int left_cnt = tr[tr[u].lc].cnt - tr[tr[v].lc].cnt;
         int mid = l + (r - l) / 2;
-        if (k <= left_cnt) {
-            return query(tr[u].lc, tr[v].lc, l, mid, k);
-        } else {
-            return query(tr[u].rc, tr[v].rc, mid + 1, r, k - left_cnt);
-        }
+        if (k <= left_cnt) return query(tr[u].lc, tr[v].lc, l, mid, k);
+        return query(tr[u].rc, tr[v].rc, mid + 1, r, k - left_cnt);
     }
 
-    // 一键构建前缀主席树 (下标 1 ~ a.size()-1)
-    void build(const vector<int>& a) {
+    // 功能: 一键构建前缀主席树 (a 须为 1-indexed)
+    template <typename T>
+    void build(const vector<T>& a) {
+        if ((int)a.size() <= 1) {
+            n = m = 0;
+            roots.assign(1, 0);
+            tr.assign(1, Node{});
+            vals.clear();
+            return;
+        }
         n = a.size() - 1;
         roots.assign(n + 1, 0);
         tr.clear();
@@ -509,115 +742,57 @@ struct PersistentSegTree {
 
     // --- 一行小封装入口 ---
     int insert(int p, int pos) { return insert(p, 1, m, pos); }
-    int get_pos(int x) const { return lower_bound(vals.begin(), vals.end(), x) - vals.begin() + 1; }
-    int query_kth(int l, int r, int k) const { return vals[query(roots[r], roots[l - 1], 1, m, k) - 1]; }
+    int get_pos(ll x) const { return lower_bound(vals.begin(), vals.end(), x) - vals.begin() + 1; }
+    ll query_kth(int l, int r, int k) const { return vals[query(roots[r], roots[l - 1], 1, m, k) - 1]; }
 
-    // --- 可选扩展 1: 区间值域计数 (<= x 或 [x, y]) ---
+    // --- 可选扩展 1: 区间值域计数 / 二维数点 ---
     int query_count(int u, int v, int l, int r, int ql, int qr) const {
         if (ql > r || qr < l || ql > qr) return 0;
         if (ql <= l && r <= qr) return tr[u].cnt - tr[v].cnt;
         int mid = l + (r - l) / 2;
-        return query_count(tr[u].lc, tr[v].lc, l, mid, ql, qr) + query_count(tr[u].rc, tr[v].rc, mid + 1, r, ql, qr);
+        return query_count(tr[u].lc, tr[v].lc, l, mid, ql, qr) +
+               query_count(tr[u].rc, tr[v].rc, mid + 1, r, ql, qr);
     }
-    int count_le(int l, int r, int x) const {
-        return query_count(roots[r], roots[l - 1], 1, m, 1, upper_bound(vals.begin(), vals.end(), x) - vals.begin());
+    int count_le(int l, int r, ll x) const {
+        int qr = upper_bound(vals.begin(), vals.end(), x) - vals.begin();
+        return query_count(roots[r], roots[l - 1], 1, m, 1, qr);
     }
-    int count_range(int l, int r, int x, int y) const { return count_le(l, r, y) - count_le(l, r, x - 1); }
+    int count_range(int l, int r, ll x, ll y) const {
+        if (x > y) return 0;
+        int ql = lower_bound(vals.begin(), vals.end(), x) - vals.begin() + 1;
+        int qr = upper_bound(vals.begin(), vals.end(), y) - vals.begin();
+        return query_count(roots[r], roots[l - 1], 1, m, ql, qr);
+    }
 
-    // --- 可选扩展 2: 树上路径第 k 小 (四树差分) ---
+    // --- 可选扩展 2: 树上路径第 k 小 (u + v - lca - fa_lca 差分) ---
     int query_tree(int u, int v, int lca, int fa_lca, int l, int r, int k) const {
         if (l == r) return l;
-        int left = tr[tr[u].lc].cnt + tr[tr[v].lc].cnt - tr[tr[lca].lc].cnt - tr[tr[fa_lca].lc].cnt;
+        int left_cnt = tr[tr[u].lc].cnt + tr[tr[v].lc].cnt - tr[tr[lca].lc].cnt - tr[tr[fa_lca].lc].cnt;
         int mid = l + (r - l) / 2;
-        if (k <= left) return query_tree(tr[u].lc, tr[v].lc, tr[lca].lc, tr[fa_lca].lc, l, mid, k);
-        else return query_tree(tr[u].rc, tr[v].rc, tr[lca].rc, tr[fa_lca].rc, mid + 1, r, k - left);
+        if (k <= left_cnt) return query_tree(tr[u].lc, tr[v].lc, tr[lca].lc, tr[fa_lca].lc, l, mid, k);
+        return query_tree(tr[u].rc, tr[v].rc, tr[lca].rc, tr[fa_lca].rc, mid + 1, r, k - left_cnt);
     }
-    int query_path_kth(int u, int v, int lca, int fa_lca, int k) const {
+    ll query_path_kth(int u, int v, int lca, int fa_lca, int k) const {
         return vals[query_tree(roots[u], roots[v], roots[lca], roots[fa_lca], 1, m, k) - 1];
     }
 };
+
+/*
+使用示范:
+    vector<int> a = {0, 3, -1, 5, 2, 4, 2, 5, 10, -5}; // 1-indexed
+    PersistentSegTree pst(a);
+    ll val = pst.query_kth(2, 6, 3);
+    int cnt = pst.count_range(2, 6, 2, 4);
+*/
 ```
 
 ---
 
-## 7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组求解)
+## 7. 扩展中国剩余定理 (EXCRT - 不互质同余方程组)
 
-> **公式与避坑备忘**:  
-> - 联立方程: 已有前 $k-1$ 个方程特解 $ans$，模数 $M = \text{lcm}(m_1 \dots m_{k-1})$。加入方程 $x \equiv r \pmod m$ $\implies t \cdot M \equiv r - ans \pmod m$  
-> - 解线性同余: $g = \text{exgcd}(M, m, t, y)$。若 $(r - ans) \pmod g \neq 0$ 则**无解**  
-> - 更新: 令 $mod\_step = m / g$，$t \equiv t \cdot \frac{r - ans}{g} \pmod{mod\_step}$，$ans \leftarrow ans + t \cdot M$，$M \leftarrow M \cdot mod\_step$  
-> - **防溢出**: 中间乘法计算务必使用 `i128` (`__int128_t`)！
-
-```cpp
-#include <bits/stdc++.h>
-using namespace std;
-
-using ll = long long;
-using i128 = __int128_t;
-
-struct EXCRT {
-    ll ans = 0; // 当前最小非负解
-    ll M = 1;   // 当前公共模数 lcm
-    bool ok = true; // 是否仍有解
-
-    EXCRT() {}
-
-    // 扩展欧几里得求 a*x + b*y = gcd(a, b)
-    ll exgcd(ll a, ll b, ll& x, ll& y) {
-        if (!b) {
-            x = 1; y = 0;
-            return a;
-        }
-        ll g = exgcd(b, a % b, y, x);
-        y -= a / b * x;
-        return g;
-    }
-
-    // 动态并入一个同余方程 x = r (mod m)
-    bool add(ll r, ll m) {
-        if (!ok) return false;
-        r = (r % m + m) % m;
-
-        ll t, y;
-        ll g = exgcd(M, m, t, y);
-        ll diff = r - ans;
-
-        if (diff % g != 0) {
-            ok = false;
-            return false;
-        }
-
-        ll mod_step = m / g;
-        t = (i128)t * (diff / g) % mod_step;
-        if (t < 0) t += mod_step;
-
-        ans += t * M;
-        M *= mod_step;
-        ans = (ans % M + M) % M;
-        return true;
-    }
-
-    // 一行小封装: 一次性求解方程组 x = r[i] (mod m[i])
-    // 返回: {最小非负解 x, lcm 模数 M} (无解返回 {-1, -1})
-    array<ll, 2> solve(const vector<ll>& r, const vector<ll>& m) {
-        ans = 0; M = 1; ok = true;
-        for (int i = 0; i < (int)r.size(); ++i) {
-            if (!add(r[i], m[i])) return {-1, -1};
-        }
-        return {ans, M};
-    }
-};
-```
-
----
-
-## 8. 欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数
-
-> **核心公式备忘**:  
-> - **单点欧拉函数**: $\mathcal{O}(\sqrt{n})$ 试除质因数，$\phi(n) = n \cdot \prod_{p \mid n} \frac{p - 1}{p}$  
-> - **扩展欧拉定理** (无需满足 $\gcd(a, m) = 1$):  
->   $$a^b \equiv \begin{cases} a^b \pmod m & b < \phi(m) \\ a^{(b \bmod \phi(m)) + \phi(m)} \pmod m & b \ge \phi(m) \end{cases}$$  
-> - **可选扩展**: 递归求解超高幂塔 $a_l^{a_{l+1}^{\dots}} \bmod m$
+> **核心公式与备忘**:  
+> - 联立 $ans + t \cdot M \equiv r \pmod m$，无解条件 $(r - ans) \bmod g \neq 0$  
+> - 中间乘法与取模全程使用 `i128` (`__int128_t`) 杜绝 64 位溢出。  
 
 ```cpp
 #pragma once
@@ -628,24 +803,102 @@ using ll = long long;
 using i128 = __int128_t;
 
 /**
- * =========================================================================
- * 欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数
- * =========================================================================
- * 适用场景:
- *   1. O(sqrt(N)) 试除法单点求大数欧拉函数 phi(n)
- *   2. 扩展欧拉定理求 a^b % m (指数 b 为长字符串或极大整数)
- *   3. 可选扩展: 递归求解超高幂塔 a_1 ^ a_2 ^ ... ^ a_k % m
- * 
- * 核心公式备忘 (赛场速查):
- *   1. 欧拉函数: phi(n) = n * prod_{p | n} (p - 1) / p
- *   2. 扩展欧拉定理 (无需满足 gcd(a, m) = 1):
- *      a^b = a^b % m                       (b < phi(m))
- *      a^b = a^( (b % phi(m)) + phi(m) ) % m  (b >= phi(m))
+ * 扩展中国剩余定理 (EXCRT - 求解模数不互质同余方程组 x = r_i mod m_i)
+ * 复杂度: 单次合并 O(log m_i), 总计 O(n log(lcm)), 空间 O(1)
+ * 核心推导: ans + t*M = r (mod m) => t*M = r - ans (mod m), 全程 i128 防溢出!
+ */
+struct EXCRT {
+    ll ans = 0;    // 当前最小非负解
+    ll M = 1;      // 当前公共模数 lcm
+    bool ok = true;
+
+    EXCRT() {}
+
+    // 功能: 清空状态 (多测安全)
+    void clear() {
+        ans = 0;
+        M = 1;
+        ok = true;
+    }
+
+    // 功能: 扩展欧几里得求 a*x + b*y = gcd(a, b)
+    ll exgcd(ll a, ll b, ll& x, ll& y) const {
+        if (!b) {
+            x = 1; y = 0;
+            return a;
+        }
+        ll g = exgcd(b, a % b, y, x);
+        y -= a / b * x;
+        return g;
+    }
+
+    // 功能: 动态并入一个同余方程 x = r (mod m)
+    // 返回: 并入后方程组是否有解
+    bool add(ll r, ll m) {
+        if (!ok) return false;
+        r = (r % m + m) % m;
+
+        ll t, y;
+        ll g = exgcd(M, m, t, y);
+        i128 diff = (i128)r - ans;
+        if (diff % g != 0) {
+            ok = false;
+            return false;
+        }
+
+        ll mod_step = m / g;
+        i128 k = (diff / g) % mod_step;
+        t = ((i128)t * k % mod_step + mod_step) % mod_step;
+
+        i128 new_M = (i128)M * mod_step;
+        ans = (ll)(((i128)ans + (i128)t * M) % new_M);
+        M = (ll)new_M;
+        return true;
+    }
+
+    // 功能: 一次性求解方程组 x = r[i] (mod m[i])
+    // 返回: {最小非负解 x, lcm 模数 M} (无解返回 {-1, -1})
+    array<ll, 2> solve(const vector<ll>& r, const vector<ll>& m) {
+        clear();
+        for (int i = 0; i < (int)r.size(); ++i) {
+            if (!add(r[i], m[i])) return {-1, -1};
+        }
+        return {ans, M};
+    }
+};
+
+/*
+使用示范:
+    EXCRT excrt;
+    auto [ans, M] = excrt.solve({2, 3, 2}, {3, 5, 7}); // ans = 23, M = 105
+*/
+```
+
+---
+
+## 8. 欧拉降幂 (扩展欧拉定理) 与单点大数欧拉函数
+
+> **核心公式与备忘**:  
+> - **单点欧拉函数**: $\mathcal{O}(\sqrt{n})$ 试除质因数，$\phi(n) = n \prod_{p \mid n} \frac{p-1}{p}$  
+> - **扩展欧拉定理**: $b < \phi(m)$ 直接算；$b \ge \phi(m)$ 取 $a^{(b \bmod \phi(m)) + \phi(m)} \bmod m$  
+
+```cpp
+#pragma once
+#include <bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+using i128 = __int128_t;
+
+/**
+ * 欧拉降幂 (扩展欧拉定理) 与 O(sqrt(N)) 单点大数欧拉函数
+ * 扩展欧拉定理 (无需 gcd(a, m) = 1):
+ *   a^b = a^b % m                         (b < phi(m))
+ *   a^b = a^( (b % phi(m)) + phi(m) ) % m  (b >= phi(m))
  */
 struct EulerPower {
     // 功能: O(sqrt(n)) 试除法求单个大数的欧拉函数 phi(n)
     // 传参: n 目标正整数 (支持至 1e14~1e18)
-    // 返回: phi(n)
     ll get_phi(ll n) const {
         ll ans = n;
         for (ll i = 2; i * i <= n; ++i) {
@@ -658,13 +911,13 @@ struct EulerPower {
         return ans;
     }
 
-    // 功能: 快速幂 a^b % m (防溢出采用 i128)
+    // 功能: 快速幂 a^b % m (i128 防溢出, 支持负底数)
     ll ksm(ll a, ll b, ll m) const {
         ll res = 1 % m;
-        a %= m;
+        a = (a % m + m) % m;
         while (b > 0) {
             if (b & 1) res = (i128)res * a % m;
-            a = (i128)a * a % m;
+            if (b > 1) a = (i128)a * a % m;
             b >>= 1;
         }
         return res;
@@ -672,7 +925,6 @@ struct EulerPower {
 
     // 功能: 扩展欧拉定理求 a^b % m (b 为大数字符串)
     // 传参: a 底数, b 指数字符串, m 模数
-    // 返回: a^b % m
     ll pow_str(ll a, const string& b, ll m) const {
         if (m == 1) return 0;
         ll p = get_phi(m);
@@ -690,8 +942,6 @@ struct EulerPower {
     }
 
     // 功能: 扩展欧拉定理求 a^b % m (b 为数值类型)
-    // 传参: a 底数, b 整数指数, m 模数
-    // 返回: a^b % m
     ll pow_num(ll a, ll b, ll m) const {
         if (m == 1) return 0;
         ll p = get_phi(m);
@@ -699,9 +949,7 @@ struct EulerPower {
         return ksm(a, b, m);
     }
 
-    // =========================================================================
-    // 可选扩展: 幂塔递归降幂 (计算 a[l] ^ a[l+1] ^ ... ^ a[r] % m)
-    // =========================================================================
+    // --- 可选扩展: 幂塔递归降幂 (计算 a[l] ^ a[l+1] ^ ... ^ a[r] % m) ---
     ll ksm_ge(ll a, ll b, ll m) const {
         ll res = 1;
         bool flag = (1 >= m);
@@ -723,8 +971,7 @@ struct EulerPower {
         return res + (flag ? m : 0);
     }
 
-    // 功能: 递归求解区间幂塔 a[l] ^ a[l+1] ^ ... ^ a[r] % m
-    // 返回: 降幂后的有效值 (最终结果对 m 取模即可)
+    // 功能: 递归计算幂塔有效降幂值 (对 m 取模即得最终答案)
     ll power_tower(const vector<ll>& a, int l, int r, ll m) const {
         if (l > r || m == 1) return 1 >= m ? 1 % m + m : 1;
         if (l == r) return a[l] >= m ? a[l] % m + m : a[l];
@@ -742,28 +989,19 @@ struct EulerPower {
 /*
 使用示范:
     EulerPower ep;
-
-    // 1. O(sqrt(n)) 单点求大数欧拉函数:
-    ll phi_val = ep.get_phi(1000000007LL); // 1000000006
-
-    // 2. 指数为大数字符串的欧拉降幂:
-    // 计算 2 ^ (10^100) % 1e9+7
+    ll phi_val = ep.get_phi(1000000007LL);
     ll ans1 = ep.pow_str(2, "1000000000000000000000000000000", 1000000007);
-
-    // 3. 幂塔降幂: 2 ^ 3 ^ 2 % 1000 = 2 ^ 9 % 1000 = 512
-    vector<ll> tower = {2, 3, 2};
-    ll ans2 = ep.query_tower(tower, 0, 2, 1000); // 512
+    ll ans2 = ep.query_tower({2, 3, 2}, 0, 2, 1000); // 512
 */
 ```
 
 ---
 
-## 9. 线性基 (Linear Basis / XOR Basis & 前缀线性基)
+## 9. 线性基 (Linear Basis & 前缀区间线性基)
 
-> **核心性质备忘**:  
-> - **向量空间**: 若非空基大小为 $r$，则能异或张成 $2^r$ 种不同的值。  
-> - **第 $k$ 小查询**: 若原集合含 0 或存在线性相关（插入时异或为 0），则 0 占位第 1 小，对应 $k \gets k - 1$；通过高斯消元行化简（RREF）后，按 $k$ 的二进制位拆分选取基向量。  
-> - **前缀线性基**: `PrefixLinearBasis` 贪心使得基向量对应的原数组下标尽可能靠右，以 $\mathcal{O}(B)$ 单次在线回答区间 $[l, r]$ 子集异或最大值。
+> **核心公式与备忘**:  
+> - 秩为 $r$ 张成 $2^r$ 种值；存在线性相关则 $0$ 占位第 $1$ 小。`rebuild()` 为行最简形（RREF）。  
+> - **前缀线性基**: 贪心保留更靠右的基下标 `pos[i]`，单次 $\mathcal{O}(B)$ 在线求区间 $[l, r]$ 最大异或和。  
 
 ```cpp
 #pragma once
@@ -773,30 +1011,16 @@ using namespace std;
 using ll = long long;
 
 /**
- * =========================================================================
- * 线性基 (Linear Basis / XOR Basis)
- * =========================================================================
- * 适用场景:
- *   1. 维护异或空间基底，O(B) 动态插入、查询异或最大值/最小值/存在性
- *   2. 高斯消元规范化后 O(B) 查询张成空间的第 k 小异或和
- *   3. 两个线性基 O(B^2) 合并
- *   4. 可选扩展: 前缀线性基 (Positional / Prefix Basis) 在线维护区间 [L, R] 异或最大值
- * 
- * 核心性质备忘 (赛场速查):
- *   1. 向量空间: 若非空基大小为 r，则能异或张成 2^r 种不同的值。
- *   2. 第 k 小查询 (1-indexed):
- *      若插入过程中有元素被异或为 0 (或原数组含 0)，说明 0 可以被表示 (此时 0 为第 1 小，k 需减 1)。
- *      规范化 (RREF) 后每一位主元互不影响，按 k 的二进制拆分贪心拼接即可。
- *   3. 区间查询 (前缀线性基):
- *      维护 pos[i] 表示基向量来自原数组的最大下标；贪心将越靠右的元素保留在基中。
+ * 线性基 (Linear Basis / XOR Basis & 前缀线性基)
+ * 复杂度: 单次插入/查询 O(B), 规范化 O(B^2), 合并 O(B^2)
+ * 注意: 非空基大小为 r 则可张成 2^r 种值；若线性相关或含 0，则第 1 小异或和为 0。
  */
 struct LinearBasis {
-    int B = 60;             // 最高有效位数 (默认支持 0 ~ 2^60-1)
-    vector<ll> d;           // 基向量数组: d[i] 的最高位必为第 i 位
-    vector<ll> p;           // 规范化后的基向量 (用于求第 k 小)
-    int cnt = 0;            // 线性基当前的大小 (秩)
-    bool has_zero = false;  // 张成空间是否包含 0
-    bool rebuilt = false;   // 是否已规范化
+    int B = 60;                     // 最高有效位数 (默认支持 0 ~ 2^60-1)
+    vector<ll> d, p;                // d[i]: 主元在第 i 位的基; p: RREF 规范化基
+    int cnt = 0;                    // 当前基大小 (秩)
+    bool has_zero = false;          // 空间是否可表示 0
+    bool rebuilt = false;           // 是否已规范化
 
     LinearBasis(int b = 60) : B(b), d(b, 0) {}
 
@@ -809,9 +1033,7 @@ struct LinearBasis {
         rebuilt = false;
     }
 
-    // 功能: 插入一个元素 x
-    // 传参: x 待插入的正整数
-    // 返回: 是否成功插入 (与已有基线性无关则返回 true)
+    // 功能: 插入元素 x (与已有基线性无关返回 true)
     bool insert(ll x) {
         rebuilt = false;
         if (x == 0) {
@@ -833,8 +1055,6 @@ struct LinearBasis {
     }
 
     // 功能: 判断 x 能否被当前线性基异或表出
-    // 传参: x 目标整数
-    // 返回: 若能表出返回 true
     bool check(ll x) const {
         for (int i = B - 1; i >= 0; --i) {
             if ((x >> i) & 1) {
@@ -845,22 +1065,16 @@ struct LinearBasis {
         return true;
     }
 
-    // 功能: 查询当前异或空间与 base 异或的最大值
-    // 传参: base 基础初值 (默认 0，即查空间最大值)
-    // 返回: 最大异或和
+    // 功能: 查询与 base 异或的最大值 (默认查空间最大异或和)
     ll query_max(ll base = 0) const {
         ll ans = base;
         for (int i = B - 1; i >= 0; --i) {
-            if ((ans ^ d[i]) > ans) {
-                ans ^= d[i];
-            }
+            if ((ans ^ d[i]) > ans) ans ^= d[i];
         }
         return ans;
     }
 
-    // 功能: 查询张成空间中的最小非零异或和
-    // 传参: allow_zero 是否允许返回 0 (若原集合线性相关且允许 0 则返回 0)
-    // 返回: 最小值
+    // 功能: 查询张成空间最小异或和 (allow_zero 控制是否允许返回 0)
     ll query_min(bool allow_zero = false) const {
         if (allow_zero && has_zero) return 0;
         for (int i = 0; i < B; ++i) {
@@ -869,15 +1083,13 @@ struct LinearBasis {
         return 0;
     }
 
-    // 功能: 行化简规范化 (高斯消元使每个基向量的主元位在其它向量中为 0)
+    // 功能: 高斯消元规范化 (行最简形 RREF, 用于查询第 k 小)
     void rebuild() {
         p.clear();
         for (int i = 0; i < B; ++i) {
             if (d[i]) {
                 for (int j = i + 1; j < B; ++j) {
-                    if ((d[j] >> i) & 1) {
-                        d[j] ^= d[i];
-                    }
+                    if ((d[j] >> i) & 1) d[j] ^= d[i];
                 }
             }
         }
@@ -887,25 +1099,21 @@ struct LinearBasis {
         rebuilt = true;
     }
 
-    // 功能: 查询非空子集异或和中的第 k 小值 (1-indexed)
-    // 传参: k 排名 (若原集合含 0 或线性相关，则 0 占位 k=1)
-    // 返回: 第 k 小异或值；若 k 超出范围返回 -1
+    // 功能: 查询非空子集第 k 小异或和 (1-indexed; 越界或 k<=0 返回 -1)
     ll query_kth(ll k) {
+        if (k <= 0) return -1;
         if (!rebuilt) rebuild();
         if (has_zero) --k;
         if (k == 0) return 0;
-        if (p.size() < 62 && k >= (1ULL << p.size())) return -1;
+        if ((int)p.size() < 63 && (unsigned long long)k >= (1ULL << p.size())) return -1;
         ll ans = 0;
         for (int i = 0; i < (int)p.size(); ++i) {
-            if ((k >> i) & 1) {
-                ans ^= p[i];
-            }
+            if ((k >> i) & 1) ans ^= p[i];
         }
         return ans;
     }
 
-    // 功能: 将另一个线性基 other 合并入当前线性基
-    // 传参: other 另一个线性基
+    // 功能: 将另一个线性基 other 合并入当前基
     void merge(const LinearBasis& other) {
         for (int i = other.B - 1; i >= 0; --i) {
             if (other.d[i]) insert(other.d[i]);
@@ -914,24 +1122,20 @@ struct LinearBasis {
     }
 };
 
-// =============================================================================
-// 可选扩展: 前缀线性基 (区间异或最大值查询)
-// =============================================================================
+// --- 可选扩展: 前缀线性基 (静态区间 [l, r] 最大异或和在线查询) ---
 struct PrefixLinearBasis {
     int B = 60;
     vector<ll> d;
-    vector<int> pos; // pos[i] 表示基向量 d[i] 对应的原数组下标 (尽量靠右)
+    vector<int> pos; // 基向量来自原数组的最大下标 (1-indexed)
 
     PrefixLinearBasis(int b = 60) : B(b), d(b, 0), pos(b, 0) {}
 
-    // 功能: 清空当前基
     void clear() {
         d.assign(B, 0);
         pos.assign(B, 0);
     }
 
-    // 功能: 插入下标为 id 的元素 x (需在上一前缀基的基础上插入)
-    // 传参: x 待插入的数值, id 元素在原数组中的下标 (1-indexed)
+    // 功能: 在上一前缀基础上插入下标 id 的元素 x
     void insert(ll x, int id) {
         for (int i = B - 1; i >= 0; --i) {
             if ((x >> i) & 1) {
@@ -949,15 +1153,11 @@ struct PrefixLinearBasis {
         }
     }
 
-    // 功能: 查询区间 [l, r] 的子集异或最大值 (当前结构体应为 pre[r])
-    // 传参: l 区间左端点, base 初始基底
-    // 返回: [l, r] 内子集最大异或和
+    // 功能: 在 pre[r] 上查询区间 [l, r] 子集最大异或和
     ll query_max(int l, ll base = 0) const {
         ll ans = base;
         for (int i = B - 1; i >= 0; --i) {
-            if (pos[i] >= l && (ans ^ d[i]) > ans) {
-                ans ^= d[i];
-            }
+            if (pos[i] >= l && (ans ^ d[i]) > ans) ans ^= d[i];
         }
         return ans;
     }
@@ -965,32 +1165,23 @@ struct PrefixLinearBasis {
 
 /*
 使用示范:
-    // 1. 基础线性基:
     LinearBasis lb(60);
     for (ll x : a) lb.insert(x);
-    ll max_xor = lb.query_max();          // 最大异或和
-    ll kth = lb.query_kth(k);              // 第 k 小异或和
-    bool can = lb.check(val);              // 能否异或出 val
+    ll mx = lb.query_max(), kth = lb.query_kth(k);
 
-    // 2. 前缀线性基 (静态区间 [l, r] 异或最大值):
     vector<PrefixLinearBasis> pre(n + 1, PrefixLinearBasis(60));
-    for (int i = 1; i <= n; ++i) {
-        pre[i] = pre[i - 1];
-        pre[i].insert(a[i], i);
-    }
-    ll ans = pre[r].query_max(l);          // O(B) 查询区间 [l, r] 最大异或和
+    for (int i = 1; i <= n; ++i) { pre[i] = pre[i - 1]; pre[i].insert(a[i], i); }
+    ll ans = pre[r].query_max(l);
 */
 ```
 
 ---
 
-## 10. PBDS (Policy-Based Data Structures · 平衡树/防卡哈希/可并堆)
+## 10. PBDS (平衡树 ordered_set / 防卡哈希 / 可并配对堆)
 
-> **基础声明与操作速查**:  
-> - **平衡树**: `order_of_key(x)` 为严格小于 $x$ 的元素个数；`find_by_order(k)` 为 0-indexed 第 $k$ 小迭代器。  
-> - **多重集注意**: 严禁传 `less_equal<T>`（会导致 `lower_bound` 变 `upper_bound` 且 `erase` 失效）！可存 `array<T, 2>{val, ++uid}` 保持严格偏序。  
-> - **防卡哈希**: `gp_hash_table` 性能极优，搭配 `custom_hash`（基于 `splitmix64`）防 Codeforces / 赛站 Hack。  
-> - **可并配对堆**: `priority_queue<T, less<T>, pairing_heap_tag>` 支持 $\mathcal{O}(1)$ `join`，执行后原堆清空。
+> **核心公式与备忘**:  
+> - `order_of_key(x)`: 严格小于 $x$ 的个数；`find_by_order(k)`: 0-indexed 第 $k$ 小迭代器。  
+> - **严禁传 `less_equal<T>`**；哈希防 CF Hack 必须配 `custom_hash`；配对堆 `join` 后原堆置空。  
 
 ```cpp
 #pragma once
@@ -1006,24 +1197,14 @@ using namespace __gnu_pbds;
 using ll = long long;
 
 /**
- * =========================================================================
- * PBDS (Policy-Based Data Structures · GCC 扩展库常用类型)
- * =========================================================================
- * 1. 平衡树 (tree / ordered_set): O(log N) 动态名次树
- *    • tr.find_by_order(k): 0-indexed 返回第 k 小元素的迭代器 (k=0 为最小，越界返回 end())
- *    • tr.order_of_key(x):  返回严格小于 x 的元素个数 (即 0-indexed 排名，1-indexed 排名需 +1)
- *    • 注意: 维护多重集严禁写 less_equal<T> (会导致 lower_bound 变 upper_bound 且 erase 失效)，
- *           存 array<T, 2>{val, ++uid} 即可。
- * 
- * 2. 高效哈希表 (gp_hash_table): 探测法寻址，常数远小于 unordered_map
- *    • CF 上默认哈希容易被 Hack，建议搭配 custom_hash 防卡。
- * 
- * 3. 可并配对堆 (priority_queue / heap):
- *    • h1.join(h2): O(1) 将 h2 全部并入 h1，h2 会被清空。
- *    • auto it = h.push(x); h.modify(it, new_val); h.erase(it); (O(log N) 修改与删除)
+ * PBDS (GCC 扩展库常用容器: 名次树 / 防卡哈希 / 可并配对堆)
+ * 注意:
+ *   1. order_of_key(x): 严格小于 x 的个数; find_by_order(k): 0-indexed 第 k 小迭代器
+ *   2. 多重集严禁写 less_equal<T> (会导致 lower_bound/erase 异常), 存 array<T, 2>{val, ++uid}
+ *   3. h1.join(h2): O(1) 合并可并堆, h2 会被置空; modify/erase 支持 point_iterator
  */
 
-// 1. 平衡树声明
+// 1. 平衡树 (Order Statistics Tree)
 template <typename T>
 using ordered_set = tree<
     T,
@@ -1033,18 +1214,14 @@ using ordered_set = tree<
     tree_order_statistics_node_update
 >;
 
-// 2. 防卡哈希声明
+// 2. 防卡哈希表 (gp_hash_table + splitmix64 运行期随机盐)
 struct custom_hash {
-    static uint64_t splitmix64(uint64_t x) {
-        x += 0x9e3779b97f4a7c15;
+    size_t operator()(uint64_t x) const {
+        static const uint64_t R = chrono::steady_clock::now().time_since_epoch().count();
+        x += R + 0x9e3779b97f4a7c15;
         x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
         x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
         return x ^ (x >> 31);
-    }
-
-    size_t operator()(uint64_t x) const {
-        static const uint64_t FIXED_RANDOM = chrono::steady_clock::now().time_since_epoch().count();
-        return splitmix64(x + FIXED_RANDOM);
     }
 };
 
@@ -1054,35 +1231,23 @@ using safe_map = gp_hash_table<K, V, custom_hash>;
 template <typename K>
 using safe_set = gp_hash_table<K, null_type, custom_hash>;
 
-// 3. 可并堆声明 (默认大根堆)
+// 3. 可并配对堆 (默认大根堆)
 template <typename T, typename Compare = less<T>>
 using heap = __gnu_pbds::priority_queue<T, Compare, pairing_heap_tag>;
 
 /*
 基础用法示范:
-    // --- 平衡树 ---
     ordered_set<int> tr;
-    tr.insert(10);
-    tr.insert(20);
-    tr.insert(30);
+    tr.insert(10); tr.insert(20);
+    int rk = tr.order_of_key(20);   // 1 (严格小于 20 的个数)
+    int v = *tr.find_by_order(0);   // 10 (0-indexed 第 0 小)
+    tr.erase(tr.lower_bound(20));
 
-    int rk = tr.order_of_key(20);           // 1 (严格小于 20 的元素有 1 个)
-    int val = *tr.find_by_order(0);         // 10 (0-indexed 第 0 小)
-    auto it = tr.lower_bound(20);           // 第一个 >= 20 的迭代器
-    tr.erase(it);                           // 删除元素
-
-    // --- 哈希表 ---
     safe_map<ll, int> mp;
     mp[123456789LL] = 1;
-    if (mp.find(123456789LL) != mp.end()) {
-        int v = mp[123456789LL];
-    }
 
-    // --- 可并堆 ---
     heap<int> h1, h2;
-    h1.push(10); h1.push(30);
-    h2.push(20); h2.push(40);
-    h1.join(h2);                            // O(1) 合并，h2 被置空
-    int top_val = h1.top();                 // 40
+    auto it = h1.push(10); h1.modify(it, 30);
+    h2.push(40); h1.join(h2);       // h1.top() == 40
 */
 ```
